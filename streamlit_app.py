@@ -8,29 +8,39 @@ if 'role' not in st.session_state:
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
 
-# 사용자 친화적인 CSS (큰 폰트, 고대비)
+# 사용자 친화적인 CSS (글씨를 최대한 크게)
 st.markdown("""
 <style>
+    /* 전체 폰트 크기 및 색상 */
     .st-emotion-cache-183060u, .st-emotion-cache-1cyp687, .st-emotion-cache-16sx4w0, .st-emotion-cache-11r9c4z, .st-emotion-cache-19k721u {
-        font-size: 1.25rem !important;
-    }
-    .st-emotion-cache-19k721u, .st-emotion-cache-11r9c4z {
-        font-size: 1.35rem !important;
-    }
-    .st-emotion-cache-16sx4w0 {
-        background-color: #1e1e1e !important;
+        font-size: 1.4rem !important;
         color: #e0e0e0 !important;
     }
-    .st-emotion-cache-q8s-b9p {
-        background-color: #1e1e1e !important;
-        color: #e0e0e0 !important;
-    }
+    
+    /* 제목 */
     h1, h2, h3 {
-        color: #f7a300;
+        font-size: 2.5rem !important;
+        color: #f7a300 !important;
         font-weight: bold;
     }
-    body {
-        background-color: #121212 !important;
+    h3 {
+        font-size: 2rem !important;
+    }
+    
+    /* 버튼 */
+    .st-emotion-cache-19k721u, .st-emotion-cache-11r9c4z {
+        font-size: 1.5rem !important;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    /* 사이드바, 입력창, 버튼 배경색 */
+    .st-emotion-cache-16sx4w0, .st-emotion-cache-q8s-b9p {
+        background-color: #1e1e1e !important;
+    }
+    
+    /* 라디오 버튼, 체크박스 폰트 */
+    label.st-emotion-cache-p2w958 {
+        font-size: 1.3rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -77,6 +87,9 @@ if st.session_state.page == 'home':
     with col2:
         if st.button("🧑‍🎓 멘티 (도움을 받고 싶어요)"):
             set_role('mentee')
+
+    st.markdown("---")
+    st.info("✅ 위에 있는 버튼을 눌러 당신의 역할을 선택해주세요.")
 
 elif st.session_state.page == 'signup_and_survey':
     if not st.session_state.role:
@@ -134,13 +147,14 @@ elif st.session_state.page == 'signup_and_survey':
                 communication_time = st.multiselect("소통 가능한 시간대 (복수선택)", ["오전", "오후", "저녁", "밤"])
                 
                 st.subheader("● 관심사, 취향")
-                # 모든 사용자를 위한 공통 질문
                 hobby = st.multiselect(
                     "여가/취미 관련", ["독서", "음악 감상", "영화/드라마 감상", "게임", "운동/스포츠 관람"]
                 )
+                
+                st.subheader("● 추구하는 성향")
                 new_vs_stable = st.selectbox(
-                    "어떤 것을 더 선호하시나요?",
-                    ["새로운 경험을 추구", "안정적이고 익숙한 것을 선호"]
+                    "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
+                    ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"]
                 )
 
                 survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
@@ -149,25 +163,29 @@ elif st.session_state.page == 'signup_and_survey':
                     st.success("🎉 설문조사가 완료되었습니다! 이제 맞춤형 멘토/멘티를 찾을 수 있습니다.")
                     st.json({"role": st.session_state.role, "name": name, "gender": gender})
                     set_page('find_matches')
+            
+            st.markdown("---")
+            st.info("✅ 모든 설문 항목을 작성하고 '설문 완료' 버튼을 눌러주세요.")
 
 elif st.session_state.page == 'find_matches':
     st.title("🔎 매칭 찾기")
     st.write("나에게 맞는 멘토/멘티를 찾아보세요.")
     if st.session_state.role == 'mentor':
         st.write("멘토님에게 적합한 멘티들을 추천합니다.")
-        # 멘티 추천 목록 표시 (가상 데이터)
-        st.info("김철수 (멘티), 박영희 (멘티)")
+        st.info("✅ 아래 목록에서 마음에 드는 멘티를 선택해주세요.")
     else: # mentee
         st.write("멘티님에게 적합한 멘토들을 추천합니다.")
-        # 멘토 추천 목록 표시 (가상 데이터)
-        st.info("이순신 (멘토), 세종대왕 (멘토)")
+        st.info("✅ 아래 목록에서 마음에 드는 멘토를 선택해주세요.")
+
+    # 여기에 매칭 결과 표시 로직 추가 (가상 데이터)
+    st.info("김철수 (멘티), 박영희 (멘티), 이순신 (멘토), 세종대왕 (멘토)")
 
 elif st.session_state.page == 'my_matches':
     st.title("👤 내 매칭")
     st.write("현재 매칭된 멘토/멘티와의 소통 공간입니다.")
-    st.info("아직 매칭된 상대가 없습니다.")
+    st.info("✅ 아직 매칭된 상대가 없습니다. '매칭 찾기'를 통해 상대를 찾아보세요.")
 
 elif st.session_state.page == 'admin_dashboard':
     st.title("⚙️ 관리자 대시보드")
     st.write("플랫폼 전체 회원 현황 및 매칭 현황을 관리합니다.")
-    st.warning("관리자만 접근 가능합니다.")
+    st.warning("✅ 이 페이지는 관리자만 접근할 수 있습니다.")
