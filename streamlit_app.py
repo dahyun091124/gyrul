@@ -126,7 +126,7 @@ elif st.session_state.page == 'signup_and_survey':
                 gender = st.radio("성별", ["남", "여", "기타"], horizontal=True)
                 age_group = st.selectbox(
                     "나이대",
-                    ["만 13세~19세", "만 20세~29세", "만 30세~39세", "만 40세~49세", "만 50세~59세", "만 60세~69세", "만 70세~79세", "만 80세~89세", "만 90세 이상"]
+                    ["만 40세~49세", "만 50세~59세", "만 60세~69세", "만 70세~79세", "만 80세~89세", "만 90세 이상"]
                 )
                 
                 if st.session_state.role == 'mentor':
@@ -152,11 +152,18 @@ elif st.session_state.page == 'signup_and_survey':
                 )
                 
                 st.subheader("● 추구하는 성향")
-                new_vs_stable = st.selectbox(
+                # 여기서 새로운 경험/안정감은 라디오 버튼으로 분리
+                new_vs_stable = st.radio(
                     "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
                     ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"]
                 )
-
+                
+                # 나머지 성향은 체크박스로 추가
+                preference = st.multiselect(
+                    "본인에게 해당하는 성향을 모두 선택해주세요.",
+                    ["혼자 보내는 시간 선호", "친구들과 어울리기 선호", "실내 활동 선호", "야외 활동 선호"]
+                )
+                
                 survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
                 if survey_submitted:
                     st.balloons()
@@ -177,7 +184,6 @@ elif st.session_state.page == 'find_matches':
         st.write("멘티님에게 적합한 멘토들을 추천합니다.")
         st.info("✅ 아래 목록에서 마음에 드는 멘토를 선택해주세요.")
 
-    # 여기에 매칭 결과 표시 로직 추가 (가상 데이터)
     st.info("김철수 (멘티), 박영희 (멘티), 이순신 (멘토), 세종대왕 (멘토)")
 
 elif st.session_state.page == 'my_matches':
