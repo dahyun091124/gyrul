@@ -9,17 +9,19 @@ ROLE = 'mentor'
 # 🚨 관리자 대시보드 비밀번호 설정 🚨
 ADMIN_PASSWORD = "1234" 
 
-# 페이지 상태 관리
+# 페이지 상태 관리 및 초기화
 if 'page' not in st.session_state:
     st.session_state.page = 'signup_and_survey'
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
-# 실제 데이터 저장소 (세션이 유지되는 동안 데이터 보존)
 if 'mentor_data' not in st.session_state:
     st.session_state.mentor_data = []
-# 관리자 인증 상태
 if 'admin_authenticated' not in st.session_state:
     st.session_state.admin_authenticated = False
+
+# **(수정)** 회원가입 폼에 사용되는 key는 폼 제출 후 초기화하지 않고,
+# 사용자 입력이 계속 남아있도록 유지하거나, 폼 자체를 clear_on_submit=True로 변경해야 함.
+# 여기서는 폼 키를 명시적으로 사용하여 오류를 방지합니다.
 
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
@@ -86,21 +88,24 @@ with st.sidebar:
 
 
 # ----------------------------------------------------------------------
-# 관리자 대시보드 페이지 함수 (관리자 인증 추가)
+# 관리자 대시보드 페이지 함수 (관리자 인증 및 회원 데이터 조회)
 # ----------------------------------------------------------------------
 def admin_dashboard():
     st.title("⚙️ 관리자 대시보드")
+    st.write("플랫폼 전체 회원 현황 및 매칭 성과를 관리합니다.")
     st.markdown("---")
     
     # --- 관리자 인증 영역 ---
     if not st.session_state.admin_authenticated:
         st.subheader("🔑 관리자 인증")
-        password = st.text_input("관리자 비밀번호를 입력해주세요.", type="password")
+        # **(수정)** 비밀번호 입력 필드의 키를 추가
+        password = st.text_input("관리자 비밀번호를 입력해주세요.", type="password", key='admin_password_input')
         
         if st.button("로그인"):
             if password == ADMIN_PASSWORD:
                 st.session_state.admin_authenticated = True
-                st.rerun() # 인증 후 페이지 새로고침
+                st.success("✅ 인증 성공! 대시보드가 로드됩니다.")
+                st.rerun() 
             else:
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
         
@@ -109,7 +114,6 @@ def admin_dashboard():
         return
 
     # --- 인증 성공 후 대시보드 내용 ---
-    st.write("플랫폼 전체 회원 현황 및 매칭 성과를 관리합니다.")
     
     # 멘토 데이터 로드
     mentors = st.session_state.mentor_data
@@ -123,7 +127,7 @@ def admin_dashboard():
     # DataFrame 생성
     df_mentors = pd.DataFrame(mentors)
     
-    # 표시할 컬럼 순서 지정 (필요 없는 세부 설문 항목은 숨김)
+    # 표시할 컬럼 순서 지정
     display_columns = ['ID', '이름', '이메일', '가입일', '나이대', '성별', '현재 직종', '만남 방식', '소통 스타일', '매칭 상태']
     df_display = df_mentors[display_columns]
 
@@ -134,12 +138,11 @@ def admin_dashboard():
     col_filter1, col_filter2 = st.columns(2)
     
     with col_filter1:
-        search_term = st.text_input("이름, 이메일, 직종으로 검색")
+        search_term = st.text_input("이름, 이메일, 직종으로 검색", key='admin_search_term')
     
     with col_filter2:
-        # 드롭다운 메뉴에 '전체' 옵션이 항상 포함되도록 처리
         status_options = ['전체'] + sorted(df_mentors['매칭 상태'].unique().tolist())
-        selected_status = st.selectbox("매칭 상태별 필터", status_options)
+        selected_status = st.selectbox("매칭 상태별 필터", status_options, key='admin_status_filter')
 
     # 데이터 필터링 로직
     df_filtered = df_display
@@ -188,14 +191,15 @@ if st.session_state.page == 'signup_and_survey':
     # ----------------------------------------------------------------------
     # 1. 회원가입 폼
     # ----------------------------------------------------------------------
-    with st.form("signup_form", clear_on_submit=False):
+    # **(수정)** clear_on_submit=True로 변경하여 폼 제출 후 필드 자동 초기화 유도
+    with st.form("signup_form", clear_on_submit=True): 
         st.subheader("1. 계정 정보 입력")
         
-        # 폼 내부 변수 (설문폼과 공유하기 위해 폼 바깥에 선언)
-        name_input = st.text_input("이름", key='signup_name')
-        email_input = st.text_input("이메일 (로그인 ID)", key='signup_email')
-        password_input = st.text_input("비밀번호", type="password", key='signup_password')
-        confirm_password_input = st.text_input("비밀번호 확인", type="password", key='signup_confirm_password')
+        # **(수정)** 폼 내 변수에도 고유 key 부여 (값이 세션 상태에 저장됨)
+        name_input = st.text_input("이름", key='signup_name_val')
+        email_input = st.text_input("이메일 (로그인 ID)", key='signup_email_val')
+        password_input = st.text_input("비밀번호", type="password", key='signup_password_val')
+        confirm_password_input = st.text_input("비밀번호 확인", type="password", key='signup_confirm_password_val')
         
         submitted = st.form_submit_button("회원가입하고 설문하기")
         if submitted:
@@ -204,8 +208,14 @@ if st.session_state.page == 'signup_and_survey':
             elif password_input != confirm_password_input:
                 st.error("❌ 비밀번호가 일치하지 않습니다. 다시 확인해주세요.")
             else:
+                # 다음 설문 단계에서 사용할 값들을 세션 상태에 임시 저장
+                st.session_state['temp_name'] = name_input
+                st.session_state['temp_email'] = email_input
+                
                 st.success("✅ 회원가입 정보가 확인되었습니다! 아래 설문을 계속 진행해주세요.")
                 st.session_state.survey_done = True
+                # st.rerun() # 폼이 clear_on_submit=True 이므로 rerunning 없이도 작동 가능
+
     
     st.markdown("---")
     
@@ -216,8 +226,13 @@ if st.session_state.page == 'signup_and_survey':
         st.header("2. 멘토 프로필 설문")
         st.write("성공적인 매칭을 위해 아래 항목에 답해주세요.")
         
-        with st.form("survey_form", clear_on_submit=True):
+        # **(수정)** 설문 폼은 clear_on_submit=False로 유지하여 값 저장 시점까지 유지
+        with st.form("survey_form", clear_on_submit=False): 
             st.subheader("● 기본 정보")
+            # 회원가입 시 저장된 이름과 이메일 표시 (입력 불가)
+            st.text_input("가입 이름", value=st.session_state.get('temp_name', ''), disabled=True)
+            st.text_input("가입 이메일", value=st.session_state.get('temp_email', ''), disabled=True)
+            
             gender = st.radio("성별", ["남", "여", "기타"], horizontal=True, key='survey_gender')
             age_group = st.selectbox(
                 "나이대",
@@ -297,6 +312,7 @@ if st.session_state.page == 'signup_and_survey':
             new_vs_stable = st.radio(
                 "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
                 ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"],
+                horizontal=True, # **(수정)** 라디오 버튼은 horizontal=True로 명시
                 key='survey_new_vs_stable'
             )
             
@@ -311,9 +327,9 @@ if st.session_state.page == 'signup_and_survey':
                 
                 # 멘토 데이터 수집 및 저장
                 mentor_profile = {
-                    'ID': str(uuid.uuid4())[:8], # 고유 ID 생성
-                    '이름': st.session_state.signup_name,
-                    '이메일': st.session_state.signup_email,
+                    'ID': str(uuid.uuid4())[:8], 
+                    '이름': st.session_state.get('temp_name', '이름 없음'),
+                    '이메일': st.session_state.get('temp_email', '이메일 없음'),
                     '가입일': datetime.date.today().strftime("%Y-%m-%d"),
                     '매칭 상태': '매칭 대기',
                     
@@ -334,17 +350,17 @@ if st.session_state.page == 'signup_and_survey':
                     '선호 성향': ", ".join(preference)
                 }
                 
-                # 🚨 세션 상태에 데이터 추가 (실제 DB 역할)
                 st.session_state.mentor_data.append(mentor_profile)
                 
-                # 설문 완료 후 상태 초기화 및 페이지 이동
+                # **(수정)** 에러를 일으켰던 세션 상태 초기화 코드를 제거하고,
+                # 설문 완료 상태만 리셋하여 다음 가입을 준비.
                 st.session_state.survey_done = False
                 
-                # 회원가입 폼 입력 필드 초기화 (텍스트 인풋만)
-                st.session_state.signup_name = ''
-                st.session_state.signup_email = ''
-                st.session_state.signup_password = ''
-                st.session_state.signup_confirm_password = ''
+                # 임시 데이터도 제거
+                if 'temp_name' in st.session_state:
+                    del st.session_state['temp_name']
+                if 'temp_email' in st.session_state:
+                    del st.session_state['temp_email']
                 
                 st.balloons()
                 st.success("🎉 멘토 프로필 설문이 완료되었습니다! 이제 멘티를 찾을 수 있습니다.")
