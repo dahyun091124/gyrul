@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # 이 파일은 멘토 전용 페이지입니다. 역할은 'mentor'로 고정됩니다.
 ROLE = 'mentor'
@@ -8,20 +9,22 @@ if 'page' not in st.session_state:
     st.session_state.page = 'signup_and_survey'
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
+if 'avatar_file' not in st.session_state:
+    # 40대 이상 아바타 4개 중 기본값 설정
+    st.session_state.avatar_file = 'image_a3cf69.jpg' 
 
-# 아바타 목록
-AVATARS = {
-    "👵 지혜로운 할머니": "👵", 
-    "👴 인자한 할아버지": "👴", 
-    "🧑‍🏫 전문가": "🧑‍🏫",
-    "📚 학자": "📚",
-    "💼 사업가": "💼",
-    "🎨 예술가": "🎨"
+# 아바타 목록 (40대 이상으로 보이는 이미지 4개만 사용)
+# 파일 이름은 코드를 깔끔하게 하기 위해 별도의 딕셔너리로 관리합니다.
+AVATAR_FILES = {
+    "👵 지혜로운 멘토 (여)": "image_a3cf69.jpg", 
+    "👴 인자한 멘토 (남)": "image_a3cf82.jpg", 
+    "🧑‍🏫 커리어 멘토 (남)": "image_a3cf47.jpg", # 셔츠, 넥타이 복장으로 전문적인 이미지
 }
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
 st.markdown("""
 <style>
+    /* ... (이전과 동일한 CSS 스타일 유지) ... */
     /* 전체 폰트 크기 및 색상 */
     .st-emotion-cache-183060u, .st-emotion-cache-1cyp687, .st-emotion-cache-16sx4w0, .st-emotion-cache-11r9c4z, .st-emotion-cache-19k721u {
         font-size: 1.4rem !important;
@@ -44,14 +47,13 @@ st.markdown("""
         padding: 0.75rem 1.5rem;
     }
     
-    /* 사이드바, 입력창, 버튼 배경색 */
-    .st-emotion-cache-16sx4w0, .st-emotion-cache-q8s-b9p {
-        background-color: #1e1e1e !important;
-    }
-    
-    /* 라디오 버튼, 체크박스 폰트 */
-    label.st-emotion-cache-p2w958 {
-        font-size: 1.3rem !important;
+    /* 아바타 이미지 크기 조정 */
+    .avatar-container img {
+        max-width: 150px;
+        height: auto;
+        border-radius: 10px;
+        margin: 10px auto;
+        display: block;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -60,7 +62,7 @@ st.markdown("""
 def set_page(page_name):
     st.session_state.page = page_name
 
-# 사이드바 메뉴 (멘토 페이지에 맞게 재구성)
+# 사이드바 메뉴
 with st.sidebar:
     st.image("https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png", width=50)
     st.title("멘토 전용 메뉴")
@@ -85,10 +87,18 @@ if st.session_state.page == 'signup_and_survey':
     with st.form("signup_form", clear_on_submit=False):
         st.subheader("1. 아바타 및 계정 정보")
         
-        # 아바타 선택 추가
-        selected_avatar_name = st.selectbox("프로필 아바타 선택", list(AVATARS.keys()))
-        selected_avatar_emoji = AVATARS[selected_avatar_name]
-        st.write(f"선택된 아바타: **{selected_avatar_emoji}**")
+        # 아바타 선택
+        selected_avatar_name = st.selectbox("프로필 아바타 선택", list(AVATAR_FILES.keys()))
+        st.session_state.avatar_file = AVATAR_FILES[selected_avatar_name]
+        
+        # 아바타 이미지 표시
+        st.markdown("<div class='avatar-container'>", unsafe_allow_html=True)
+        try:
+            # os.path.join을 사용하여 현재 디렉토리의 파일을 참조
+            st.image(os.path.join(".", st.session_state.avatar_file), caption=selected_avatar_name)
+        except:
+            st.warning(f"⚠️ 아바타 파일을 찾을 수 없습니다. GitHub에 '{st.session_state.avatar_file}' 파일이 있는지 확인해주세요.")
+        st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -99,7 +109,9 @@ if st.session_state.page == 'signup_and_survey':
         
         submitted = st.form_submit_button("회원가입하고 설문하기")
         if submitted:
-            if password != confirm_password:
+            if not name or not email or not password:
+                st.error("❌ 모든 계정 정보를 입력해주세요.")
+            elif password != confirm_password:
                 st.error("❌ 비밀번호가 일치하지 않습니다. 다시 확인해주세요.")
             else:
                 st.success("✅ 회원가입 정보가 확인되었습니다! 아래 설문을 계속 진행해주세요.")
@@ -114,6 +126,7 @@ if st.session_state.page == 'signup_and_survey':
         st.header("2. 멘토 프로필 설문")
         st.write("성공적인 매칭을 위해 아래 항목에 답해주세요.")
         
+        # 나머지 설문 항목은 이전과 동일하게 유지됩니다.
         with st.form("survey_form", clear_on_submit=True):
             st.subheader("● 기본 정보")
             gender = st.radio("성별", ["남", "여", "기타"], horizontal=True)
@@ -122,7 +135,7 @@ if st.session_state.page == 'signup_and_survey':
                 ["만 40세~49세", "만 50세~59세", "만 60세~69세", "만 70세~79세", "만 80세~89세", "만 90세 이상"]
             )
 
-            # --- 직종 선택 (첨부된 이미지 기반) ---
+            # --- 직종 선택 ---
             st.subheader("● 현재 직종")
             occupation_options = [
                 "경영자 (CEO, 사업주 등)", "행정관리", "의학/보건", "법률/행정", "교육", "연구개발/IT", 
@@ -133,12 +146,11 @@ if st.session_state.page == 'signup_and_survey':
             occupation = st.selectbox("현재 직종", occupation_options)
 
             # --- 가입 목적 및 대화 주제 ---
-            st.subheader("● 가입 목적")
+            st.subheader("● 멘토링 목적 및 주제")
             purpose = st.multiselect(
                 "멘토링을 통해 어떤 도움을 주고 싶으신가요? (복수선택 가능)",
                 ["진로/커리어 조언", "학업/전문지식 조언", "사회/인생 경험 공유", "정서적 지지 및 대화"]
             )
-            st.subheader("● 선호하는 대화 주제")
             topic = st.multiselect(
                 "멘토링에서 주로 어떤 주제에 대해 이야기하고 싶으신가요?",
                 ["진로·직업", "학업·전문 지식", "인생 경험·삶의 가치관", "대중문화·취미", "사회 문제·시사", "건강·웰빙"]
@@ -151,7 +163,7 @@ if st.session_state.page == 'signup_and_survey':
             communication_time = st.multiselect("소통 가능한 시간대 (복수선택)", ["오전", "오후", "저녁", "밤"])
             
             st.subheader("● 소통 스타일")
-            communication_style = st.radio(
+            communication_style = st.selectbox(
                 "평소 대화 시 본인과 비슷하다고 생각되는 것을 선택해주세요.",
                 [
                     "연두부형: 조용하고 차분하게, 상대방 얘기를 경청하며 공감해 주는 편이에요.", 
@@ -182,16 +194,14 @@ if st.session_state.page == 'signup_and_survey':
                 ["K-POP", "아이돌/연예인", "유튜브/스트리밍", "웹툰/웹소설", "스포츠 스타"]
             )
 
-            # --- 추구하는 성향 (새로움 vs 안정감 포함) ---
+            # --- 추구하는 성향 ---
             st.subheader("● 5) 특별한 취향/성향")
             
-            # 새로운 경험 vs 안정감은 별도의 라디오 버튼으로 분리
             new_vs_stable = st.radio(
                 "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
                 ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"]
             )
             
-            # 나머지 성향은 체크박스로
             preference = st.multiselect(
                 "본인에게 해당하는 성향을 모두 선택해주세요.",
                 ["혼자 보내는 시간 선호", "친구들과 어울리기 선호", "실내 활동 선호", "야외 활동 선호"]
@@ -209,8 +219,7 @@ if st.session_state.page == 'signup_and_survey':
 elif st.session_state.page == 'find_matches':
     st.title("🔎 멘티 찾기")
     st.write("멘토님에게 적합한 멘티들을 추천합니다.")
-    st.info("✅ 아래 목록에서 마음에 드는 멘티를 선택해주세요.")
-    # 가상 데이터 삭제 완료
+    st.info("✅ 현재 매칭 가능한 멘티가 없습니다. 곧 새로운 멘티가 가입될 예정입니다.") 
 
 elif st.session_state.page == 'my_matches':
     st.title("👤 내 매칭")
