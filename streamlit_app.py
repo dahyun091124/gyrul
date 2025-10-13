@@ -1,5 +1,4 @@
 import streamlit as st
-import os
 
 # 이 파일은 멘토 전용 페이지입니다. 역할은 'mentor'로 고정됩니다.
 ROLE = 'mentor'
@@ -9,17 +8,7 @@ if 'page' not in st.session_state:
     st.session_state.page = 'signup_and_survey'
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
-if 'avatar_file' not in st.session_state:
-    # 40대 이상 아바타 3개 중 기본값 설정 (첫 번째 이미지로)
-    st.session_state.avatar_file = 'KakaoTalk_Photo_2025-10-13-15-19-08.png' 
 
-# 아바타 목록 (제공된 카톡 사진 파일 이름과 역할 매핑)
-# 파일이름: KakaoTalk_Photo_2025-10-13-15-19-08.png, KakaoTalk_Photo_2025-10-13-15-19-00.png, KakaoTalk_Photo_2025-10-13-15-19-15.png
-AVATAR_FILES = {
-    "👴 인자한 멘토 (남성)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
-    "👵 지혜로운 멘토 (여성)": "KakaoTalk_Photo_2025-10-13-15-19-00.png", 
-    "🧑‍🏫 커리어 멘토 (남성)": "KakaoTalk_Photo_2025-10-13-15-19-15.png",
-}
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
 st.markdown("""
@@ -46,13 +35,14 @@ st.markdown("""
         padding: 0.75rem 1.5rem;
     }
     
-    /* 아바타 이미지 크기 조정 */
-    .avatar-container img {
-        max-width: 150px;
-        height: auto;
-        border-radius: 10px;
-        margin: 10px auto;
-        display: block;
+    /* 사이드바, 입력창, 버튼 배경색 */
+    .st-emotion-cache-16sx4w0, .st-emotion-cache-q8s-b9p {
+        background-color: #1e1e1e !important;
+    }
+    
+    /* 라디오 버튼, 체크박스 폰트 */
+    label.st-emotion-cache-p2w958 {
+        font-size: 1.3rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -84,37 +74,7 @@ if st.session_state.page == 'signup_and_survey':
     # 1. 회원가입 폼
     # ----------------------------------------------------------------------
     with st.form("signup_form", clear_on_submit=False):
-        st.subheader("1. 아바타 및 계정 정보")
-        
-        # 아바타 선택
-        # key를 설정하여 selectbox가 변경될 때마다 폼 전체가 아닌 해당 부분만 리렌더링되도록 시도
-        selected_avatar_name = st.selectbox(
-            "프로필 아바타 선택", 
-            list(AVATAR_FILES.keys()), 
-            key='avatar_select'
-        )
-        
-        # 선택된 아바타 파일 이름 업데이트
-        st.session_state.avatar_file = AVATAR_FILES[selected_avatar_name]
-        
-        # 아바타 이미지를 별도의 컨테이너에 표시하여 갱신을 확실히 함
-        avatar_placeholder = st.empty()
-        
-        with avatar_placeholder.container():
-            st.markdown("<div class='avatar-container'>", unsafe_allow_html=True)
-            try:
-                # os.path.join을 사용하여 현재 디렉토리의 파일을 참조
-                # Streamlit의 이미지 캐싱을 우회하기 위해 width를 명시적으로 설정 (혹은 query parameter를 사용)
-                st.image(
-                    os.path.join(".", st.session_state.avatar_file), 
-                    caption=selected_avatar_name, 
-                    use_column_width='always' # width 설정 대신 use_column_width를 사용하여 크기 조정
-                )
-            except:
-                st.warning(f"⚠️ 아바타 파일을 찾을 수 없습니다. GitHub에 '{st.session_state.avatar_file}' 파일이 있는지 확인해주세요.")
-            st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.markdown("---")
+        st.subheader("1. 계정 정보 입력")
         
         name = st.text_input("이름")
         email = st.text_input("이메일 (로그인 ID)")
@@ -140,7 +100,6 @@ if st.session_state.page == 'signup_and_survey':
         st.header("2. 멘토 프로필 설문")
         st.write("성공적인 매칭을 위해 아래 항목에 답해주세요.")
         
-        # 나머지 설문 항목은 이전과 동일하게 유지됩니다.
         with st.form("survey_form", clear_on_submit=True):
             st.subheader("● 기본 정보")
             gender = st.radio("성별", ["남", "여", "기타"], horizontal=True)
@@ -209,7 +168,7 @@ if st.session_state.page == 'signup_and_survey':
             )
 
             # --- 추구하는 성향 ---
-            st.subheader("● 5) 취향 및 성향")
+            st.subheader("● 5) 특별한 취향/성향")
             
             new_vs_stable = st.radio(
                 "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
