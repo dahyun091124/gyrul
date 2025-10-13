@@ -55,8 +55,7 @@ with st.sidebar:
     st.image("https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png", width=50)
     st.title("멘토 전용 메뉴")
     st.markdown("---")
-    # '홈' 버튼은 '회원가입' 페이지로 이동하도록 설정
-    if st.button("📝 멘토 회원가입"): set_page('signup_and_survey')
+    if st.button("📝 회원가입/설문"): set_page('signup_and_survey')
     if st.button("👤 내 매칭"): set_page('my_matches')
     if st.button("🔎 멘티 찾기"): set_page('find_matches')
     if st.button("⚙️ 관리자 대시보드"): set_page('admin_dashboard')
@@ -70,9 +69,11 @@ if st.session_state.page == 'signup_and_survey':
     st.title("✨ 멘토 회원가입 및 설문")
     st.markdown("경험과 지혜를 나누어줄 **멘토님**을 모십니다.")
     
-    # 회원가입 폼
+    # ----------------------------------------------------------------------
+    # 1. 회원가입 폼
+    # ----------------------------------------------------------------------
     with st.form("signup_form", clear_on_submit=False):
-        st.subheader("계정 정보")
+        st.subheader("1. 계정 정보")
         name = st.text_input("이름")
         email = st.text_input("이메일 (로그인 ID)")
         password = st.text_input("비밀번호", type="password")
@@ -86,10 +87,13 @@ if st.session_state.page == 'signup_and_survey':
                 st.success("✅ 회원가입 정보가 확인되었습니다! 아래 설문을 계속 진행해주세요.")
                 st.session_state.survey_done = True
     
-    # 설문조사 폼
+    st.markdown("---")
+    
+    # ----------------------------------------------------------------------
+    # 2. 설문조사 폼 (모든 항목 포함)
+    # ----------------------------------------------------------------------
     if st.session_state.survey_done:
-        st.markdown("---")
-        st.header("프로필 설문")
+        st.header("2. 멘토 프로필 설문")
         st.write("성공적인 매칭을 위해 아래 항목에 답해주세요.")
         
         with st.form("survey_form", clear_on_submit=True):
@@ -99,49 +103,99 @@ if st.session_state.page == 'signup_and_survey':
                 "나이대",
                 ["만 40세~49세", "만 50세~59세", "만 60세~69세", "만 70세~79세", "만 80세~89세", "만 90세 이상"]
             )
-            
-            # 멘토 전용 질문: 전문 분야
-            st.subheader("● 멘토링 전문 분야")
-            mentor_topics = st.multiselect(
-                "어떤 분야에 대해 도움을 주실 수 있나요? (복수 선택 가능)",
-                ["직장 경험", "기술/IT", "인문/사회", "예술/문화", "재테크/투자", "정서적 조언", "기타"]
+
+            # --- 직종 선택 (첨부된 이미지 기반) ---
+            st.subheader("● 현재 직종")
+            occupation = st.selectbox(
+                "현재 직종",
+                [
+                    "경영자 (CEO, 사업주 등)", "행정관리", "의학/보건", "법률/행정", "교육", "연구개발/IT", 
+                    "예술/디자인", "기술/기능", "서비스 전문", "일반 사무", "영업 원", "판매", "서비스", 
+                    "의료/보건 서비스", "생산/제조", "건설/시설", "농림수산업", "운송/기계", "운송 관리", 
+                    "청소/경비", "단순노무", "학생", "전업주부", "구직자/프리랜서(임시)", "기타 (직접 입력)"
+                ]
             )
 
-            st.subheader("● 소통 스타일")
-            communication_style = st.radio("선호하는 소통 방법", ["대면 만남", "화상 채팅", "일반 채팅"], horizontal=True)
-            communication_time = st.multiselect("소통 가능한 시간대 (복수선택)", ["오전", "오후", "저녁", "밤"])
-            
-            st.subheader("● 관심사, 취향")
-            hobby = st.multiselect(
-                "여가/취미 관련", ["독서", "음악 감상", "영화/드라마 감상", "게임", "운동/스포츠 관람"]
+            # --- 가입 목적 및 대화 주제 ---
+            st.subheader("● 가입 목적")
+            purpose = st.multiselect(
+                "멘토링을 통해 어떤 도움을 주고 싶으신가요? (복수선택 가능)",
+                ["진로/커리어 조언", "학업/전문지식 조언", "사회/인생 경험 공유", "정서적 지지 및 대화"]
+            )
+            st.subheader("● 선호하는 대화 주제")
+            topic = st.multiselect(
+                "멘토링에서 주로 어떤 주제에 대해 이야기하고 싶으신가요?",
+                ["진로·직업", "학업·전문 지식", "인생 경험·삶의 가치관", "대중문화·취미", "사회 문제·시사", "건강·웰빙"]
             )
             
-            st.subheader("● 추구하는 성향")
+            # --- 소통 스타일 ---
+            st.subheader("● 선호하는 소통 방법")
+            communication_method = st.radio("만남 방식", ["대면 만남", "화상 채팅", "일반 채팅"], horizontal=True)
+            communication_day = st.multiselect("소통 가능한 요일 (복수선택)", ["월", "화", "수", "목", "금", "토", "일"])
+            communication_time = st.multiselect("소통 가능한 시간대 (복수선택)", ["오전", "오후", "저녁", "밤"])
+            
+            st.subheader("● 소통 스타일")
+            communication_style = st.radio(
+                "평소 대화 시 본인과 비슷하다고 생각되는 것을 선택해주세요.",
+                [
+                    "연두부형: 조용하고 차분하게, 상대방 얘기를 경청하며 공감해 주는 편이에요.", 
+                    "분위기메이커형: 활발하고 에너지가 넘쳐 대화를 이끌어가는 편이에요.",
+                    "효율추구형: 주제를 체계적으로 정리하고 목표 지향적으로 대화하는 편이에요.",
+                    "댐댐이형: 자유롭고 편안하게, 즉흥적으로 대화를 이어가는 편이에요.",
+                    "감성 충만형: 감성적인 대화를 좋아하고 위로와 지지를 주는 편이에요.",
+                    "냉철한 조언자형: 논리적이고 문제 해결 중심으로 조언을 주고받는 편이에요."
+                ]
+            )
+
+            # --- 관심사 및 취향 ---
+            st.subheader("● 관심사, 취향")
+            hobby = st.multiselect(
+                "1) 여가/취미 관련",
+                ["독서", "음악 감상", "영화/드라마 감상", "게임 (PC/콘솔/모바일)", "운동/스포츠 관람", "미술·전시 감상", "여행", "요리/베이킹", "사진/영상 제작", "춤/노래"]
+            )
+            academic = st.multiselect(
+                "2) 학문/지적 관심사",
+                ["인문학 (철학, 역사, 문학 등)", "사회과학 (정치, 경제, 사회, 심리 등)", "자연과학 (물리, 화학, 생명과학 등)", "수학/논리 퍼즐", "IT/테크놀로지 (AI, 코딩, 로봇 등)", "환경/지속가능성"]
+            )
+            lifestyle = st.multiselect(
+                "3) 라이프스타일",
+                ["패션/뷰티", "건강/웰빙", "자기계발", "사회참여/봉사활동", "재테크/투자", "반려동물"]
+            )
+            pop_culture = st.multiselect(
+                "4) 대중문화",
+                ["K-POP", "아이돌/연예인", "유튜브/스트리밍", "웹툰/웹소설", "스포츠 스타"]
+            )
+
+            # --- 추구하는 성향 (새로움 vs 안정감 포함) ---
+            st.subheader("● 5) 특별한 취향/성향")
+            
+            # 새로운 경험 vs 안정감은 별도의 라디오 버튼으로 분리
             new_vs_stable = st.radio(
                 "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
                 ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"]
             )
             
+            # 나머지 성향은 체크박스로
             preference = st.multiselect(
                 "본인에게 해당하는 성향을 모두 선택해주세요.",
                 ["혼자 보내는 시간 선호", "친구들과 어울리기 선호", "실내 활동 선호", "야외 활동 선호"]
             )
-            
+
             survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
             if survey_submitted:
                 st.balloons()
                 st.success("🎉 멘토 프로필 설문이 완료되었습니다! 이제 멘티를 찾을 수 있습니다.")
-                st.json({"role": ROLE, "name": name, "gender": gender})
                 set_page('find_matches')
         
         st.markdown("---")
-        st.info("✅ 모든 설문 항목을 작성하고 '설문 완료' 버튼을 눌러주세요.")
+        st.info("✅ 모든 설문 항목을 작성하고 **'설문 완료하고 매칭 시작하기'** 버튼을 눌러주세요.")
 
 elif st.session_state.page == 'find_matches':
     st.title("🔎 멘티 찾기")
     st.write("멘토님에게 적합한 멘티들을 추천합니다.")
     st.info("✅ 아래 목록에서 마음에 드는 멘티를 선택해주세요.")
-    st.info("김철수 (멘티), 박영희 (멘티)") # 가상 데이터
+    # 가상 데이터
+    st.info("김철수 (멘티), 박영희 (멘티)") 
 
 elif st.session_state.page == 'my_matches':
     st.title("👤 내 매칭")
