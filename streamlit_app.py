@@ -194,7 +194,7 @@ if st.session_state.page == 'signup_and_survey':
             )
 
             # --- 추구하는 성향 ---
-            st.subheader("● 5) 특별한 취향/성향")
+            st.subheader("● 5) 취향 및 성향")
             
             new_vs_stable = st.radio(
                 "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
