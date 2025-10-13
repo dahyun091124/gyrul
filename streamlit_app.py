@@ -4,7 +4,7 @@ import os
 # 이 파일은 멘토 전용 페이지입니다. 역할은 'mentor'로 고정됩니다.
 ROLE = 'mentor'
 
-# 페이지 상태 관리 (필요한 경우)
+# 페이지 상태 관리
 if 'page' not in st.session_state:
     st.session_state.page = 'signup_and_survey'
 if 'survey_done' not in st.session_state:
@@ -14,17 +14,16 @@ if 'avatar_file' not in st.session_state:
     st.session_state.avatar_file = 'KakaoTalk_Photo_2025-10-13-15-19-08.png' 
 
 # 아바타 목록 (제공된 카톡 사진 파일 이름과 역할 매핑)
-# 이미지 순서와 매핑은 제공된 이미지들을 바탕으로 추정했습니다.
+# 파일이름: KakaoTalk_Photo_2025-10-13-15-19-08.png, KakaoTalk_Photo_2025-10-13-15-19-00.png, KakaoTalk_Photo_2025-10-13-15-19-15.png
 AVATAR_FILES = {
     "👴 인자한 멘토 (남성)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
     "👵 지혜로운 멘토 (여성)": "KakaoTalk_Photo_2025-10-13-15-19-00.png", 
-    "🧑‍🏫 커리어 멘토 (젊은 남성)": "KakaoTalk_Photo_2025-10-13-15-19-15.png",
+    "🧑‍🏫 커리어 멘토 (남성)": "KakaoTalk_Photo_2025-10-13-15-19-15.png",
 }
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
 st.markdown("""
 <style>
-    /* ... (이전과 동일한 CSS 스타일 유지) ... */
     /* 전체 폰트 크기 및 색상 */
     .st-emotion-cache-183060u, .st-emotion-cache-1cyp687, .st-emotion-cache-16sx4w0, .st-emotion-cache-11r9c4z, .st-emotion-cache-19k721u {
         font-size: 1.4rem !important;
@@ -88,16 +87,32 @@ if st.session_state.page == 'signup_and_survey':
         st.subheader("1. 아바타 및 계정 정보")
         
         # 아바타 선택
-        selected_avatar_name = st.selectbox("프로필 아바타 선택", list(AVATAR_FILES.keys()))
+        # key를 설정하여 selectbox가 변경될 때마다 폼 전체가 아닌 해당 부분만 리렌더링되도록 시도
+        selected_avatar_name = st.selectbox(
+            "프로필 아바타 선택", 
+            list(AVATAR_FILES.keys()), 
+            key='avatar_select'
+        )
+        
+        # 선택된 아바타 파일 이름 업데이트
         st.session_state.avatar_file = AVATAR_FILES[selected_avatar_name]
         
-        # 아바타 이미지 표시
-        st.markdown("<div class='avatar-container'>", unsafe_allow_html=True)
-        try:
-            st.image(os.path.join(".", st.session_state.avatar_file), caption=selected_avatar_name)
-        except:
-            st.warning(f"⚠️ 아바타 파일을 찾을 수 없습니다. GitHub에 '{st.session_state.avatar_file}' 파일이 있는지 확인해주세요.")
-        st.markdown("</div>", unsafe_allow_html=True)
+        # 아바타 이미지를 별도의 컨테이너에 표시하여 갱신을 확실히 함
+        avatar_placeholder = st.empty()
+        
+        with avatar_placeholder.container():
+            st.markdown("<div class='avatar-container'>", unsafe_allow_html=True)
+            try:
+                # os.path.join을 사용하여 현재 디렉토리의 파일을 참조
+                # Streamlit의 이미지 캐싱을 우회하기 위해 width를 명시적으로 설정 (혹은 query parameter를 사용)
+                st.image(
+                    os.path.join(".", st.session_state.avatar_file), 
+                    caption=selected_avatar_name, 
+                    use_column_width='always' # width 설정 대신 use_column_width를 사용하여 크기 조정
+                )
+            except:
+                st.warning(f"⚠️ 아바타 파일을 찾을 수 없습니다. GitHub에 '{st.session_state.avatar_file}' 파일이 있는지 확인해주세요.")
+            st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("---")
         
