@@ -11,7 +11,7 @@ if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
 if 'avatar_file' not in st.session_state:
     # 40대 이상 아바타 4개 중 기본값 설정
-    st.session_state.avatar_file = 'KakaoTalk_Photo_2025-10-13-15-19-00.png' 
+    st.session_state.avatar_file 
 
 # 아바타 목록 (40대 이상으로 보이는 이미지 4개만 사용)
 # 파일 이름은 코드를 깔끔하게 하기 위해 별도의 딕셔너리로 관리합니다.
