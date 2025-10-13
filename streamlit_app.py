@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import uuid # 고유 ID 생성을 위해 import
 
 # 이 파일은 멘토 전용 페이지입니다. 역할은 'mentor'로 고정됩니다.
 ROLE = 'mentor'
@@ -8,6 +10,9 @@ if 'page' not in st.session_state:
     st.session_state.page = 'signup_and_survey'
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
+# 🚨🚨🚨 실제 데이터 저장소 (세션이 유지되는 동안 데이터 보존) 🚨🚨🚨
+if 'mentor_data' not in st.session_state:
+    st.session_state.mentor_data = []
 
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
@@ -44,6 +49,11 @@ st.markdown("""
     label.st-emotion-cache-p2w958 {
         font-size: 1.3rem !important;
     }
+    
+    /* 정보 표시 영역 (info, success 등) */
+    .stAlert {
+        font-size: 1.3rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -51,7 +61,7 @@ st.markdown("""
 def set_page(page_name):
     st.session_state.page = page_name
 
-# 사이드바 메뉴
+# 사이드바 메뉴 (관리자 대시보드가 맨 마지막)
 with st.sidebar:
     st.image("https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png", width=50)
     st.title("멘토 전용 메뉴")
@@ -59,9 +69,88 @@ with st.sidebar:
     if st.button("📝 회원가입/설문"): set_page('signup_and_survey')
     if st.button("👤 내 매칭"): set_page('my_matches')
     if st.button("🔎 멘티 찾기"): set_page('find_matches')
+    st.markdown("---")
     if st.button("⚙️ 관리자 대시보드"): set_page('admin_dashboard')
     st.markdown("---")
     st.info("※ 데모용: 로컬에 저장됩니다.")
+
+
+# ----------------------------------------------------------------------
+# 관리자 대시보드 페이지 함수 (실제 회원 데이터 조회)
+# ----------------------------------------------------------------------
+def admin_dashboard():
+    st.title("⚙️ 관리자 대시보드")
+    st.write("플랫폼 전체 회원 현황 및 매칭 성과를 관리합니다.")
+    st.error("🚨 **주의**: 이 페이지는 플랫폼의 **핵심 데이터**를 다루므로, 운영진만 접근해야 합니다.")
+    st.warning("⚠️ **중요**: 이 데이터는 **현재 Streamlit 세션에만 임시로 저장**되며, 앱을 재실행하면 사라집니다.")
+    
+    st.markdown("---")
+    
+    # 멘토 데이터 로드
+    mentors = st.session_state.mentor_data
+    
+    st.subheader(f"👥 멘토 회원 목록 (총 {len(mentors)}명)")
+    
+    if not mentors:
+        st.info("아직 가입된 멘토 회원이 없습니다. 회원가입 페이지에서 테스트로 등록해주세요.")
+        return
+
+    # DataFrame 생성
+    df_mentors = pd.DataFrame(mentors)
+    
+    # 표시할 컬럼 순서 지정 (필요 없는 세부 설문 항목은 숨김)
+    display_columns = ['ID', '이름', '이메일', '가입일', '나이대', '성별', '현재 직종', '만남 방식', '소통 스타일', '매칭 상태']
+    df_display = df_mentors[display_columns]
+
+    # --------------------------------
+    # 필터링/검색 UI
+    # --------------------------------
+    st.markdown("#### 🔍 멘토 검색 및 필터링")
+    col_filter1, col_filter2 = st.columns(2)
+    
+    with col_filter1:
+        search_term = st.text_input("이름, 이메일, 직종으로 검색")
+    
+    with col_filter2:
+        selected_status = st.selectbox("매칭 상태별 필터", ['전체', '매칭 중', '매칭 대기'])
+
+    # 데이터 필터링 로직
+    df_filtered = df_display
+    
+    if search_term:
+        df_filtered = df_filtered[
+            df_filtered['이름'].str.contains(search_term, case=False, na=False) |
+            df_filtered['이메일'].str.contains(search_term, case=False, na=False) |
+            df_filtered['현재 직종'].str.contains(search_term, case=False, na=False)
+        ]
+        
+    if selected_status != '전체':
+        df_filtered = df_filtered[df_filtered['매칭 상태'] == selected_status]
+
+    
+    # --------------------------------
+    # 필터링 결과 표시 및 관리 기능
+    # --------------------------------
+    st.markdown(f"**총 {len(df_filtered)}건**의 멘토 회원 정보가 표시됩니다.")
+    
+    # 멘토 목록 테이블 표시
+    st.dataframe(df_filtered, use_container_width=True)
+
+    st.markdown("---")
+
+    st.subheader("🛠️ 멘토 관리 기능")
+    st.info("여기에 선택된 멘토에 대한 강제 매칭, 정지, 프로필 수정 등의 기능이 구현됩니다.")
+    
+    col_admin1, col_admin2, col_admin3 = st.columns(3)
+    with col_admin1:
+        if st.button("회원 상세 프로필 보기"):
+            st.warning("⚠️ 특정 멘토의 상세 프로필을 열람하는 기능이 실행됩니다.")
+    with col_admin2:
+        if st.button("선택된 멘토 강제 정지"):
+            st.error("❌ 멘토 정지 기능이 실행되었습니다.")
+    with col_admin3:
+        if st.button("선택된 멘토에게 개별 알림"):
+            st.success("✅ 개별 알림 발송 기능이 실행되었습니다.")
 
 
 # --- 메인 페이지 로직 ---
@@ -76,16 +165,17 @@ if st.session_state.page == 'signup_and_survey':
     with st.form("signup_form", clear_on_submit=False):
         st.subheader("1. 계정 정보 입력")
         
-        name = st.text_input("이름")
-        email = st.text_input("이메일 (로그인 ID)")
-        password = st.text_input("비밀번호", type="password")
-        confirm_password = st.text_input("비밀번호 확인", type="password")
+        # 폼 내부 변수 (설문폼과 공유하기 위해 폼 바깥에 선언)
+        name_input = st.text_input("이름", key='signup_name')
+        email_input = st.text_input("이메일 (로그인 ID)", key='signup_email')
+        password_input = st.text_input("비밀번호", type="password", key='signup_password')
+        confirm_password_input = st.text_input("비밀번호 확인", type="password", key='signup_confirm_password')
         
         submitted = st.form_submit_button("회원가입하고 설문하기")
         if submitted:
-            if not name or not email or not password:
+            if not name_input or not email_input or not password_input:
                 st.error("❌ 모든 계정 정보를 입력해주세요.")
-            elif password != confirm_password:
+            elif password_input != confirm_password_input:
                 st.error("❌ 비밀번호가 일치하지 않습니다. 다시 확인해주세요.")
             else:
                 st.success("✅ 회원가입 정보가 확인되었습니다! 아래 설문을 계속 진행해주세요.")
@@ -112,9 +202,9 @@ if st.session_state.page == 'signup_and_survey':
             st.subheader("● 현재 직종")
             occupation_options = [
                 "경영자 (CEO, 사업주 등)", "행정관리", "의학/보건", "법률/행정", "교육", "연구개발/IT", 
-                "예술/디자인", "기술/기능", "서비스 전문", "일반 사무", "영업 원", "판매", "서비스", 
+                "예술/디자인", "기술/기능", "서비스 전문", "일반 사무", "영업원", "판매", "서비스", 
                 "의료/보건 서비스", "생산/제조", "건설/시설", "농림수산업", "운송/기계", "운송 관리", 
-                "청소/경비", "단순노무", "학생", "전업주부", "구직자/프리랜서(임시)", "기타 (직접 입력)"
+                "청소/경비", "단순노무", "전업주부", "구직자/프리랜서(임시)", "기타 (직접 입력)"
             ]
             occupation = st.selectbox("현재 직종", occupation_options)
 
@@ -182,6 +272,42 @@ if st.session_state.page == 'signup_and_survey':
 
             survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
             if survey_submitted:
+                
+                # 멘토 데이터 수집 및 저장
+                mentor_profile = {
+                    'ID': str(uuid.uuid4())[:8], # 고유 ID 생성
+                    '이름': st.session_state.signup_name,
+                    '이메일': st.session_state.signup_email,
+                    '가입일': pd.Timestamp.now().strftime("%Y-%m-%d"),
+                    '매칭 상태': '매칭 대기',
+                    
+                    '성별': gender,
+                    '나이대': age_group,
+                    '현재 직종': occupation,
+                    '멘토링 목적': purpose,
+                    '주요 주제': topic,
+                    '만남 방식': communication_method,
+                    '가능 요일': communication_day,
+                    '가능 시간': communication_time,
+                    '소통 스타일': communication_style,
+                    '취미': hobby,
+                    '학문': academic,
+                    '라이프스타일': lifestyle,
+                    '대중문화': pop_culture,
+                    '경험 선호': new_vs_stable,
+                    '선호 성향': preference
+                }
+                
+                # 🚨 세션 상태에 데이터 추가 (실제 DB 역할)
+                st.session_state.mentor_data.append(mentor_profile)
+                
+                # 설문 완료 후 상태 초기화 및 페이지 이동
+                st.session_state.survey_done = False
+                st.session_state.signup_name = ''
+                st.session_state.signup_email = ''
+                st.session_state.signup_password = ''
+                st.session_state.signup_confirm_password = ''
+                
                 st.balloons()
                 st.success("🎉 멘토 프로필 설문이 완료되었습니다! 이제 멘티를 찾을 수 있습니다.")
                 set_page('find_matches')
@@ -200,6 +326,4 @@ elif st.session_state.page == 'my_matches':
     st.info("✅ 아직 매칭된 상대가 없습니다. '멘티 찾기'를 통해 상대를 찾아보세요.")
 
 elif st.session_state.page == 'admin_dashboard':
-    st.title("⚙️ 관리자 대시보드")
-    st.write("플랫폼 전체 회원 현황 및 매칭 현황을 관리합니다.")
-    st.warning("✅ 이 페이지는 관리자만 접근할 수 있습니다.")
+    admin_dashboard()
