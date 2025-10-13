@@ -17,7 +17,7 @@ if 'avatar_file' not in st.session_state:
 # 파일 이름은 코드를 깔끔하게 하기 위해 별도의 딕셔너리로 관리합니다.
 AVATAR_FILES = {
     "👵 지혜로운 멘토 (여)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
-    "👴 인자한 멘토 (남)": "image_a3cf82.jpg", 
+    "👴 인자한 멘토 (남)": "KakaoTalk_Photo_2025-10-13-15-19-00.png", 
     "🧑‍🏫 커리어 멘토 (남)": "image_a3cf47.jpg", # 셔츠, 넥타이 복장으로 전문적인 이미지
 }
 
