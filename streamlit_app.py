@@ -21,16 +21,8 @@ if 'admin_authenticated' not in st.session_state:
 
 
 # ----------------------------------------------------------------------
-# 관리자 기능 헬퍼 함수
+# 관리자 기능 헬퍼 함수 (정지/알림 관련 함수는 제거)
 # ----------------------------------------------------------------------
-
-def update_mentor_status(mentor_id, new_status):
-    """특정 멘토의 매칭 상태를 업데이트하고 결과를 반환합니다."""
-    for mentor in st.session_state.mentor_data:
-        if mentor['ID'] == mentor_id:
-            mentor['매칭 상태'] = new_status
-            return True
-    return False
 
 def find_mentor_by_id(mentor_id):
     """ID로 멘토 객체를 찾아 반환합니다."""
@@ -122,11 +114,11 @@ with st.sidebar:
 
 
 # ----------------------------------------------------------------------
-# 관리자 대시보드 페이지 함수 (모든 기능 구현)
+# 관리자 대시보드 페이지 함수 (상세 프로필 보기 기능만 유지)
 # ----------------------------------------------------------------------
 def admin_dashboard():
     st.title("⚙️ 관리자 대시보드")
-    st.write("플랫폼 전체 회원 현황 및 매칭 성과를 관리합니다.")
+    st.write("플랫폼 전체 회원 현황을 조회합니다.")
     st.markdown("---")
     
     # --- 관리자 인증 영역 ---
@@ -188,48 +180,30 @@ def admin_dashboard():
 
     st.markdown("---")
 
-    st.subheader("🛠️ 멘토 관리 기능")
+    st.subheader("🛠️ 멘토 상세 정보 조회")
     
     # --------------------------------
-    # 멘토 ID 입력 및 기능 실행
+    # 상세 프로필 보기 기능만 유지
     # --------------------------------
     
-    # ID 입력 필드를 별도로 배치
-    target_id = st.text_input("관리할 멘토의 8자리 ID를 입력하세요.", key='target_mentor_id_input')
+    col_id, col_button = st.columns([2, 1])
     
-    col_admin1, col_admin2, col_admin3 = st.columns(3)
-    
-    # 1. 회원 상세 프로필 보기
-    with col_admin1:
+    with col_id:
+        # 멘토 ID 입력
+        target_id = st.text_input("상세 프로필을 볼 멘토 ID를 입력하세요.", key='target_mentor_id_input')
+        
+    with col_button:
+        st.markdown("##### ") # 버튼을 중앙에 맞추기 위한 공간 확보
+        # 버튼을 누르면 입력된 ID를 확인하고 상세 정보를 표시
         if st.button("회원 상세 프로필 보기", use_container_width=True):
             if target_id and find_mentor_by_id(target_id):
                 st.session_state['show_detail_id'] = target_id
                 st.success(f"✅ ID: {target_id} 님의 상세 정보를 로드했습니다.")
-                # 상세 정보 표시를 위해 페이지 새로고침
                 st.rerun() 
             else:
-                st.error(f"❌ ID: {target_id if target_id else ''} 에 해당하는 멘토를 찾을 수 없습니다.")
-
-    # 2. 선택된 멘토 강제 정지
-    with col_admin2:
-        if st.button("선택된 멘토 강제 정지", use_container_width=True):
-            if target_id and find_mentor_by_id(target_id):
-                if update_mentor_status(target_id, '정지됨'):
-                    st.error(f"🚨 ID: {target_id} 멘토의 **매칭 상태가 '정지됨'**으로 변경되었습니다.")
-                    st.rerun() # 상태 업데이트 후 목록 새로고침
-                else:
-                    st.error("❌ 상태 업데이트 중 오류가 발생했습니다.")
-            else:
-                st.warning("⚠️ 유효한 멘토 ID를 입력하고 강제 정지 버튼을 누르세요.")
-
-    # 3. 선택된 멘토에게 개별 알림
-    with col_admin3:
-        if st.button("선택된 멘토에게 개별 알림", use_container_width=True):
-            if target_id and find_mentor_by_id(target_id):
-                st.success(f"📧 ID: {target_id} 멘토에게 **개별 알림 발송** 기능이 실행되었습니다. (실제 알림 로직 필요)")
-            else:
-                st.warning("⚠️ 유효한 멘토 ID를 입력하고 개별 알림 버튼을 누르세요.")
-
+                st.error(f"❌ ID: {target_id if target_id else ''} 에 해당하는 멘토를 찾을 수 없거나 ID를 입력하지 않았습니다.")
+                if 'show_detail_id' in st.session_state:
+                    del st.session_state['show_detail_id']
 
     # --------------------------------
     # 상세 정보 표시 영역 (이전 코드와 동일)
