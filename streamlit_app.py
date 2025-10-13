@@ -10,15 +10,15 @@ if 'page' not in st.session_state:
 if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
 if 'avatar_file' not in st.session_state:
-    # 40대 이상 아바타 4개 중 기본값 설정
-    st.session_state.avatar_file 
+    # 40대 이상 아바타 3개 중 기본값 설정 (첫 번째 이미지로)
+    st.session_state.avatar_file = 'KakaoTalk_Photo_2025-10-13-15-19-08.png' 
 
-# 아바타 목록 (40대 이상으로 보이는 이미지 4개만 사용)
-# 파일 이름은 코드를 깔끔하게 하기 위해 별도의 딕셔너리로 관리합니다.
+# 아바타 목록 (제공된 카톡 사진 파일 이름과 역할 매핑)
+# 이미지 순서와 매핑은 제공된 이미지들을 바탕으로 추정했습니다.
 AVATAR_FILES = {
-    "👵 지혜로운 멘토 (여)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
-    "👴 인자한 멘토 (남)": "KakaoTalk_Photo_2025-10-13-15-19-00.png", 
-    "🧑‍🏫 커리어 멘토 (남)": "KakaoTalk_Photo_2025-10-13-15-19-15.png", # 셔츠, 넥타이 복장으로 전문적인 이미지
+    "👴 인자한 멘토 (남성)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
+    "👵 지혜로운 멘토 (여성)": "KakaoTalk_Photo_2025-10-13-15-19-00.png", 
+    "🧑‍🏫 커리어 멘토 (젊은 남성)": "KakaoTalk_Photo_2025-10-13-15-19-15.png",
 }
 
 # 사용자 친화적인 CSS (글씨를 최대한 크게)
@@ -94,7 +94,6 @@ if st.session_state.page == 'signup_and_survey':
         # 아바타 이미지 표시
         st.markdown("<div class='avatar-container'>", unsafe_allow_html=True)
         try:
-            # os.path.join을 사용하여 현재 디렉토리의 파일을 참조
             st.image(os.path.join(".", st.session_state.avatar_file), caption=selected_avatar_name)
         except:
             st.warning(f"⚠️ 아바타 파일을 찾을 수 없습니다. GitHub에 '{st.session_state.avatar_file}' 파일이 있는지 확인해주세요.")
