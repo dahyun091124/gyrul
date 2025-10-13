@@ -16,7 +16,7 @@ if 'avatar_file' not in st.session_state:
 # 아바타 목록 (40대 이상으로 보이는 이미지 4개만 사용)
 # 파일 이름은 코드를 깔끔하게 하기 위해 별도의 딕셔너리로 관리합니다.
 AVATAR_FILES = {
-    "👵 지혜로운 멘토 (여)": "image_a3cf69.jpg", 
+    "👵 지혜로운 멘토 (여)": "KakaoTalk_Photo_2025-10-13-15-19-08.png", 
     "👴 인자한 멘토 (남)": "image_a3cf82.jpg", 
     "🧑‍🏫 커리어 멘토 (남)": "image_a3cf47.jpg", # 셔츠, 넥타이 복장으로 전문적인 이미지
 }
