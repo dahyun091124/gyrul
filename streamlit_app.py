@@ -16,23 +16,35 @@ if 'survey_done' not in st.session_state:
     st.session_state.survey_done = False
 if 'mentor_data' not in st.session_state:
     st.session_state.mentor_data = []
+# 멘티 데이터 저장소 (외부 앱 시뮬레이션)
+if 'mentee_data' not in st.session_state:
+    st.session_state.mentee_data = []
+# 매칭 데이터 저장소
+if 'match_data' not in st.session_state:
+    st.session_state.match_data = []
 if 'admin_authenticated' not in st.session_state:
     st.session_state.admin_authenticated = False
+if 'current_mentor_id' not in st.session_state:
+    st.session_state.current_mentor_id = None # 현재 로그인한 멘토 ID (임시)
 
 
 # ----------------------------------------------------------------------
-# 관리자 기능 헬퍼 함수 (정지/알림 관련 함수는 제거)
+# 헬퍼 함수
 # ----------------------------------------------------------------------
-
 def find_mentor_by_id(mentor_id):
     """ID로 멘토 객체를 찾아 반환합니다."""
     return next((m for m in st.session_state.mentor_data if m['ID'] == mentor_id), None)
 
+def find_mentee_by_id(mentee_id):
+    """ID로 멘티 객체를 찾아 반환합니다."""
+    return next((m for m in st.session_state.mentee_data if m['ID'] == mentee_id), None)
+
 # ----------------------------------------------------------------------
-# CSS 스타일링
+# CSS 스타일링 (생략)
 # ----------------------------------------------------------------------
 st.markdown("""
 <style>
+    /* ... (이전 CSS 코드와 동일) ... */
     /* 전체 폰트 크기 및 색상 */
     .st-emotion-cache-183060u, .st-emotion-cache-1cyp687, .st-emotion-cache-16sx4w0, .st-emotion-cache-11r9c4z, .st-emotion-cache-19k721u {
         font-size: 1.4rem !important;
@@ -92,6 +104,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 # 페이지 이동 함수
 def set_page(page_name):
     st.session_state.page = page_name
@@ -114,9 +127,170 @@ with st.sidebar:
 
 
 # ----------------------------------------------------------------------
-# 관리자 대시보드 페이지 함수 (상세 프로필 보기 기능만 유지)
+# 페이지 함수: 멘티 찾기 (멘티 등록 및 매칭)
+# ----------------------------------------------------------------------
+def find_matches():
+    st.title("🔎 멘티 찾기")
+    
+    # 멘토가 가입되어 있는지 확인
+    if not st.session_state.current_mentor_id:
+        st.warning("⚠️ 멘티를 찾으려면 먼저 '회원가입/설문' 페이지에서 프로필 등록을 완료해야 합니다.")
+        st.info("💡 등록 완료 후 이 페이지를 다시 방문하면 멘티를 매칭할 수 있습니다.")
+        return
+
+    st.markdown("### 1. 멘티 등록 (외부 앱 시뮬레이션)")
+    st.write("다른 Streamlit 앱(멘티 앱)에서 가입한 멘티 데이터를 여기에 등록하여 매칭 후보로 만듭니다.")
+    st.info("📎 이 기능은 실제 DB가 없으므로 멘티 앱의 데이터를 수동으로 입력하는 것을 시뮬레이션합니다.")
+    
+    with st.expander("➕ 새로운 멘티 등록하기 (테스트용)", expanded=False):
+        with st.form("mentee_signup_form", clear_on_submit=True):
+            mentee_name = st.text_input("멘티 이름", key='mentee_name_val')
+            mentee_age = st.selectbox("멘티 나이대", ["10대", "20대", "30대", "40대 이상"], key='mentee_age_val')
+            mentee_goal = st.multiselect(
+                "멘티의 멘토링 목표 (복수 선택)", 
+                ["커리어 조언", "심리적 지지", "특정 기술 학습", "인생 경험 공유"],
+                key='mentee_goal_val'
+            )
+            mentee_topic = st.multiselect(
+                "멘티가 관심 있는 주제", 
+                ["진로", "학업", "재테크", "취미", "대인관계"],
+                key='mentee_topic_val'
+            )
+            mentee_submitted = st.form_submit_button("멘티 등록 완료")
+
+            if mentee_submitted:
+                if mentee_name and mentee_goal and mentee_topic:
+                    mentee_profile = {
+                        'ID': str(uuid.uuid4())[:8],
+                        '이름': mentee_name,
+                        '나이대': mentee_age,
+                        '목표': ", ".join(mentee_goal),
+                        '관심 주제': ", ".join(mentee_topic),
+                        '등록일': datetime.date.today().strftime("%Y-%m-%d"),
+                        '매칭 상태': '대기'
+                    }
+                    st.session_state.mentee_data.append(mentee_profile)
+                    st.success(f"✅ 멘티 **'{mentee_name}'** 님의 등록이 완료되었습니다! (ID: {mentee_profile['ID']})")
+                    st.rerun()
+                else:
+                    st.error("❌ 멘티 이름, 목표, 주제를 모두 입력해야 합니다.")
+
+    st.markdown("---")
+
+    st.markdown("### 2. 매칭 가능한 멘티 목록")
+    
+    available_mentees = [m for m in st.session_state.mentee_data if m['매칭 상태'] == '대기']
+
+    if not available_mentees:
+        st.info("현재 매칭을 기다리는 멘티가 없습니다. 새로운 멘티를 등록해주세요.")
+        return
+
+    df_mentees = pd.DataFrame(available_mentees)
+    df_display = df_mentees[['ID', '이름', '나이대', '목표', '관심 주제']]
+    st.dataframe(df_display, use_container_width=True, hide_index=True)
+
+    st.markdown("#### 🤝 매칭 신청하기")
+    
+    col_id, col_btn = st.columns([2, 1])
+    with col_id:
+        target_mentee_id = st.text_input("매칭할 멘티의 ID를 입력하세요.", key='target_mentee_id')
+    
+    with col_btn:
+        st.markdown("##### ") # 공간 확보
+        if st.button("매칭 신청", use_container_width=True):
+            current_mentor_id = st.session_state.current_mentor_id
+            mentor_profile = find_mentor_by_id(current_mentor_id)
+            mentee_profile = find_mentee_by_id(target_mentee_id)
+
+            if not mentor_profile:
+                st.error("❌ 멘토 프로필 정보가 유효하지 않습니다. 다시 로그인/가입해 주세요.")
+            elif not mentee_profile or mentee_profile['매칭 상태'] != '대기':
+                st.error("❌ 유효하지 않은 멘티 ID이거나, 이미 매칭 중인 멘티입니다.")
+            else:
+                # 매칭 처리
+                match_id = str(uuid.uuid4())[:8]
+                match_record = {
+                    'Match_ID': match_id,
+                    'Mentor_ID': current_mentor_id,
+                    'Mentor_Name': mentor_profile['이름'],
+                    'Mentee_ID': target_mentee_id,
+                    'Mentee_Name': mentee_profile['이름'],
+                    '매칭일': datetime.date.today().strftime("%Y-%m-%d"),
+                    '상태': '매칭 완료'
+                }
+                st.session_state.match_data.append(match_record)
+                
+                # 멘티 상태 업데이트
+                mentee_profile['매칭 상태'] = '매칭됨'
+                
+                # 멘토 상태 업데이트 (선택 사항)
+                if mentor_profile['매칭 상태'] == '매칭 대기':
+                    mentor_profile['매칭 상태'] = '매칭 중'
+                
+                st.balloons()
+                st.success(f"🎉 **{mentee_profile['이름']}** 님과의 매칭이 성공적으로 완료되었습니다! Match ID: {match_id}")
+                st.info("이제 '내 매칭' 페이지에서 매칭 정보를 확인하고 소통을 시작하세요.")
+                st.rerun()
+
+# ----------------------------------------------------------------------
+# 페이지 함수: 내 매칭 (매칭된 멘티 확인)
+# ----------------------------------------------------------------------
+def my_matches():
+    st.title("👤 내 매칭")
+    st.write("현재 매칭된 멘티와의 소통 현황을 확인합니다.")
+    
+    current_mentor_id = st.session_state.current_mentor_id
+    if not current_mentor_id:
+        st.warning("⚠️ 매칭 정보를 확인하려면 먼저 프로필 등록을 완료해야 합니다.")
+        return
+
+    st.markdown("### 매칭된 멘티 목록")
+
+    # 현재 멘토의 매칭 기록 필터링
+    my_matches_list = [
+        match for match in st.session_state.match_data 
+        if match['Mentor_ID'] == current_mentor_id and match['상태'] == '매칭 완료'
+    ]
+
+    if not my_matches_list:
+        st.info("✅ 아직 매칭된 상대가 없습니다. '멘티 찾기' 페이지에서 멘티에게 매칭을 신청해 보세요.")
+        return
+
+    # DataFrame 생성 및 표시
+    df_matches = pd.DataFrame(my_matches_list)
+    df_display = df_matches[['Match_ID', 'Mentee_Name', 'Mentee_ID', '매칭일', '상태']]
+    df_display.columns = ['매칭 ID', '멘티 이름', '멘티 ID', '매칭일', '상태'] # 컬럼명 변경
+
+    st.dataframe(df_display, use_container_width=True, hide_index=True)
+    
+    # 멘티 상세 정보 보기 (선택 사항)
+    st.markdown("---")
+    st.markdown("#### 💬 매칭된 멘티의 상세 프로필 보기")
+    
+    mentee_options = {match['멘티 이름']: match['Mentee_ID'] for match in my_matches_list}
+    selected_mentee_name = st.selectbox("상세 정보를 볼 멘티를 선택하세요.", ["선택하세요"] + list(mentee_options.keys()))
+
+    if selected_mentee_name != "선택하세요":
+        selected_mentee_id = mentee_options[selected_mentee_name]
+        mentee_detail = find_mentee_by_id(selected_mentee_id)
+        
+        if mentee_detail:
+            st.subheader(f"🔍 멘티 상세 프로필 ({selected_mentee_name})")
+            
+            # 멘티 프로필 정보를 깔끔하게 표시
+            html_content = ""
+            for key, value in mentee_detail.items():
+                if key not in ['ID', '매칭 상태']:
+                    html_content += f'<div class="detail-label">{key}:</div><div class="detail-value">{value}</div>'
+            
+            st.markdown(f'<div class="detail-box">{html_content}</div>', unsafe_allow_html=True)
+
+
+# ----------------------------------------------------------------------
+# 페이지 함수: 관리자 대시보드 (변경 없음)
 # ----------------------------------------------------------------------
 def admin_dashboard():
+    # ... (이전 코드와 동일, 상세 프로필 보기 기능만 유지) ...
     st.title("⚙️ 관리자 대시보드")
     st.write("플랫폼 전체 회원 현황을 조회합니다.")
     st.markdown("---")
@@ -182,19 +356,13 @@ def admin_dashboard():
 
     st.subheader("🛠️ 멘토 상세 정보 조회")
     
-    # --------------------------------
-    # 상세 프로필 보기 기능만 유지
-    # --------------------------------
-    
     col_id, col_button = st.columns([2, 1])
     
     with col_id:
-        # 멘토 ID 입력
         target_id = st.text_input("상세 프로필을 볼 멘토 ID를 입력하세요.", key='target_mentor_id_input')
         
     with col_button:
-        st.markdown("##### ") # 버튼을 중앙에 맞추기 위한 공간 확보
-        # 버튼을 누르면 입력된 ID를 확인하고 상세 정보를 표시
+        st.markdown("##### ") 
         if st.button("회원 상세 프로필 보기", use_container_width=True):
             if target_id and find_mentor_by_id(target_id):
                 st.session_state['show_detail_id'] = target_id
@@ -205,9 +373,6 @@ def admin_dashboard():
                 if 'show_detail_id' in st.session_state:
                     del st.session_state['show_detail_id']
 
-    # --------------------------------
-    # 상세 정보 표시 영역 (이전 코드와 동일)
-    # --------------------------------
     if 'show_detail_id' in st.session_state:
         detail_id = st.session_state['show_detail_id']
         mentor_detail = find_mentor_by_id(detail_id)
@@ -225,9 +390,10 @@ def admin_dashboard():
             
             st.info("💡 이 정보는 멘토가 회원가입 및 설문 과정에서 입력한 모든 데이터입니다.")
 
-        
-# --- 메인 페이지 로직 (변경 없음) ---
 
+# ----------------------------------------------------------------------
+# 페이지 함수: 회원가입 및 설문 (멘토 ID 저장 기능 추가)
+# ----------------------------------------------------------------------
 if st.session_state.page == 'signup_and_survey':
     st.title("✨ 멘토 회원가입 및 설문")
     st.markdown("경험과 지혜를 나누어줄 **멘토님**을 모십니다.")
@@ -259,7 +425,7 @@ if st.session_state.page == 'signup_and_survey':
     st.markdown("---")
     
     # ----------------------------------------------------------------------
-    # 2. 설문조사 폼 (모든 항목 포함)
+    # 2. 설문조사 폼 (멘토 프로필 저장 및 ID 설정)
     # ----------------------------------------------------------------------
     if st.session_state.survey_done:
         st.header("2. 멘토 프로필 설문")
@@ -357,9 +523,11 @@ if st.session_state.page == 'signup_and_survey':
             survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
             if survey_submitted:
                 
+                mentor_id = str(uuid.uuid4())[:8] # 멘토 ID 생성
+                
                 # 멘토 데이터 수집 및 저장
                 mentor_profile = {
-                    'ID': str(uuid.uuid4())[:8], 
+                    'ID': mentor_id, 
                     '이름': st.session_state.get('temp_name', '이름 없음'),
                     '이메일': st.session_state.get('temp_email', '이메일 없음'),
                     '가입일': datetime.date.today().strftime("%Y-%m-%d"),
@@ -383,6 +551,7 @@ if st.session_state.page == 'signup_and_survey':
                 }
                 
                 st.session_state.mentor_data.append(mentor_profile)
+                st.session_state.current_mentor_id = mentor_id # 🌟 현재 멘토 ID 저장
                 
                 # 상태 초기화
                 st.session_state.survey_done = False
@@ -392,21 +561,17 @@ if st.session_state.page == 'signup_and_survey':
                     del st.session_state['temp_email']
                 
                 st.balloons()
-                st.success("🎉 멘토 프로필 설문이 완료되었습니다! 이제 멘티를 찾을 수 있습니다.")
+                st.success(f"🎉 멘토 프로필 설문이 완료되었습니다! (멘토 ID: {mentor_id}) 이제 멘티를 찾을 수 있습니다.")
                 set_page('find_matches')
         
         st.markdown("---")
         st.info("✅ 모든 설문 항목을 작성하고 **'설문 완료하고 매칭 시작하기'** 버튼을 눌러주세요.")
 
 elif st.session_state.page == 'find_matches':
-    st.title("🔎 멘티 찾기")
-    st.write("멘토님에게 적합한 멘티들을 추천합니다.")
-    st.info("✅ 현재 매칭 가능한 멘티가 없습니다. 곧 새로운 멘티가 가입될 예정입니다.") 
+    find_matches()
 
 elif st.session_state.page == 'my_matches':
-    st.title("👤 내 매칭")
-    st.write("현재 매칭된 멘티와의 소통 공간입니다.")
-    st.info("✅ 아직 매칭된 상대가 없습니다. '멘티 찾기'를 통해 상대를 찾아보세요.")
+    my_matches()
 
 elif st.session_state.page == 'admin_dashboard':
     admin_dashboard()
