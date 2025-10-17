@@ -58,7 +58,7 @@ st.session_state.match_data = load_data(MATCH_FILE, MATCH_COLS)
 
 
 # ----------------------------------------------------------------------
-# 헬퍼 함수 (파일 로드/저장 기능 추가로 인해 기존 멘티 데이터 함수 제거)
+# 헬퍼 함수 
 # ----------------------------------------------------------------------
 def find_mentor_by_id(mentor_id):
     """ID로 멘토 객체를 찾아 반환합니다."""
@@ -68,17 +68,73 @@ def find_mentee_by_id(mentee_id):
     """ID로 멘티 객체를 찾아 반환합니다."""
     return next((m for m in st.session_state.mentee_data if m['ID'] == mentee_id), None)
 
+def calculate_match_score(mentor_profile, mentee_profile):
+    """
+    멘토와 멘티 프로필을 비교하여 매칭 적합도 점수를 계산합니다.
+    (간단한 키워드 일치 기반 점수화)
+    """
+    score = 0
+    
+    # 멘토의 문자열 목록 (쉼표로 구분됨)을 리스트로 변환
+    mentor_topics = set(mentor_profile.get('주요 주제', '').split(', '))
+    # mentor_styles = mentor_profile.get('소통 스타일', '') # 현재 미사용
+    # mentor_methods = mentor_profile.get('만남 방식', '') # 현재 미사용
+
+    # 멘티의 문자열 목록을 리스트로 변환
+    mentee_goals = set(mentee_profile.get('목표', '').split(', '))
+    mentee_topics = set(mentee_profile.get('관심 주제', '').split(', '))
+    
+    # 1. 멘토 주제와 멘티 관심 주제 일치 시 (가장 중요)
+    common_topics = mentor_topics.intersection(mentee_topics)
+    score += len(common_topics) * 20 # 일치당 20점 부여
+
+    # 2. 멘토링 목적과 멘티 목표 일치 시
+    mentor_purposes_map = {
+        '진로/커리어 조언': ['커리어 조언', '특정 기술 학습'],
+        '학업/전문지식 조언': ['특정 기술 학습'],
+        '사회/인생 경험 공유': ['인생 경험 공유'],
+        '정서적 지지 및 대화': ['심리적 지지']
+    }
+    
+    mentor_purpose_list = mentor_profile.get('멘토링 목적', '').split(', ')
+    
+    for purpose in mentor_purpose_list:
+        if purpose in mentor_purposes_map:
+            for goal in mentee_goals:
+                if goal in mentor_purposes_map[purpose]:
+                    score += 15 # 목적/목표 일치당 15점 부여
+                   
+    return score
+
 # ----------------------------------------------------------------------
-# CSS 스타일링 (생략)
+# CSS 스타일링 (폰트 크기 및 색상 설정)
 # ----------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* ... (CSS 코드 유지) ... */
-    /* 전체 폰트 크기 및 색상 */
-    .st-emotion-cache-183060u, .st-emotion-cache-1cyp687, .st-emotion-cache-16sx4w0, .st-emotion-cache-11r9c4z, .st-emotion-cache-19k721u {
-        font-size: 1.4rem !important;
+    /* 폰트 크기 수정 START */
+    
+    /* 일반 텍스트, 라벨 폰트 크기 확대: 1.6rem */
+    .st-emotion-cache-183060u, 
+    .st-emotion-cache-1cyp687, 
+    .st-emotion-cache-16sx4w0, 
+    .st-emotion-cache-11r9c4z, 
+    .st-emotion-cache-19k721u {
+        font-size: 1.6rem !important; /* 일반 텍스트 크기 증가 */
         color: #e0e0e0 !important;
     }
+    
+    /* 라디오 버튼, 체크박스 폰트 크기 확대: 1.5rem */
+    label.st-emotion-cache-p2w958 {
+        font-size: 1.5rem !important;
+    }
+    
+    /* 정보 표시 영역 (info, success 등) 텍스트 크기 확대: 1.5rem */
+    .stAlert {
+        font-size: 1.5rem !important;
+    }
+    
+    /* 폰트 크기 수정 END */
+    
     
     /* 제목 */
     h1, h2, h3 {
@@ -99,16 +155,6 @@ st.markdown("""
     /* 사이드바, 입력창, 버튼 배경색 */
     .st-emotion-cache-16sx4w0, .st-emotion-cache-q8s-b9p {
         background-color: #1e1e1e !important;
-    }
-    
-    /* 라디오 버튼, 체크박스 폰트 */
-    label.st-emotion-cache-p2w958 {
-        font-size: 1.3rem !important;
-    }
-    
-    /* 정보 표시 영역 (info, success 등) */
-    .stAlert {
-        font-size: 1.3rem !important;
     }
     
     /* 상세 프로필 박스 스타일 */
@@ -160,9 +206,16 @@ with st.sidebar:
 def find_matches():
     st.title("🔎 멘티 찾기")
     
-    if not st.session_state.current_mentor_id:
+    current_mentor_id = st.session_state.current_mentor_id
+    if not current_mentor_id:
         st.warning("⚠️ 멘티를 찾으려면 먼저 '회원가입/설문' 페이지에서 프로필 등록을 완료해야 합니다.")
         st.info("💡 등록 완료 후 이 페이지를 다시 방문하면 멘티를 매칭할 수 있습니다.")
+        return
+
+    # 현재 멘토의 프로필을 불러옵니다.
+    mentor_profile = find_mentor_by_id(current_mentor_id)
+    if not mentor_profile:
+        st.error("❌ 멘토 프로필 정보를 찾을 수 없습니다. 다시 가입해 주세요.")
         return
 
     st.markdown("### 1. 멘티 등록 (외부 앱 시뮬레이션)")
@@ -208,17 +261,35 @@ def find_matches():
 
     st.markdown("---")
 
-    st.markdown("### 2. 매칭 가능한 멘티 목록")
+    st.markdown("### 2. 매칭 가능한 멘티 추천 목록")
     
-    # 🌟 파일에서 로드된 데이터를 사용
+    # 🌟 멘토 프로필을 기반으로 멘티 매칭 점수 계산
     available_mentees = [m for m in st.session_state.mentee_data if m['매칭 상태'] == '대기']
+    
+    # 점수 계산 및 멘토 정보 추가
+    scored_mentees = []
+    for mentee in available_mentees:
+        score = calculate_match_score(mentor_profile, mentee)
+        mentee['매칭 점수'] = score
+        scored_mentees.append(mentee)
+        
+    # 점수가 높은 순서로 정렬
+    scored_mentees.sort(key=lambda x: x['매칭 점수'], reverse=True)
 
-    if not available_mentees:
+    if not scored_mentees:
         st.info("현재 매칭을 기다리는 멘티가 없습니다. 새로운 멘티를 등록해주세요.")
         return
 
-    df_mentees = pd.DataFrame(available_mentees)
-    df_display = df_mentees[['ID', '이름', '나이대', '목표', '관심 주제']]
+    # 상위 10명만 표시 (선택 사항)
+    top_mentees = scored_mentees[:10]
+
+    df_mentees = pd.DataFrame(top_mentees)
+    
+    # '매칭 점수'를 포함하여 사용자에게 보여줍니다.
+    df_display = df_mentees[['ID', '이름', '나이대', '목표', '관심 주제', '매칭 점수']]
+    
+    # 멘토에게 가장 잘 맞는 멘티가 상위에 표시되도록 안내합니다.
+    st.success("✨ **멘토님의 프로필 설문을 기반으로 가장 적합한 멘티를 추천했습니다.**")
     st.dataframe(df_display, use_container_width=True, hide_index=True)
 
     st.markdown("#### 🤝 매칭 신청하기")
@@ -269,6 +340,7 @@ def find_matches():
                 st.balloons()
                 st.success(f"🎉 **{mentee_profile['이름']}** 님과의 매칭이 성공적으로 완료되었습니다! Match ID: {match_id}")
                 st.info("이제 '내 매칭' 페이지에서 매칭 정보를 확인하고 소통을 시작하세요.")
+                set_page('my_matches') # '내 매칭' 페이지로 이동
                 st.rerun()
 
 # ----------------------------------------------------------------------
@@ -317,17 +389,16 @@ def my_matches():
             
             html_content = ""
             for key, value in mentee_detail.items():
-                if key not in ['ID', '매칭 상태']:
+                if key not in ['ID', '매칭 상태', '매칭 점수']:
                     html_content += f'<div class="detail-label">{key}:</div><div class="detail-value">{value}</div>'
             
             st.markdown(f'<div class="detail-box">{html_content}</div>', unsafe_allow_html=True)
 
 
 # ----------------------------------------------------------------------
-# 페이지 함수: 관리자 대시보드 (변경 없음)
+# 페이지 함수: 관리자 대시보드 (비밀번호 안내 문구 삭제됨)
 # ----------------------------------------------------------------------
 def admin_dashboard():
-    # ... (이전 코드와 동일) ...
     st.title("⚙️ 관리자 대시보드")
     st.write("플랫폼 전체 회원 현황을 조회합니다.")
     st.markdown("---")
@@ -346,7 +417,7 @@ def admin_dashboard():
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
         
         st.markdown("---")
-        st.info(f"💡 테스트 비밀번호: `{ADMIN_PASSWORD}`")
+        # 💡 테스트 비밀번호 안내 문구를 제거했습니다.
         return
 
     # --- 인증 성공 후 대시보드 내용 ---
@@ -429,7 +500,7 @@ def admin_dashboard():
 
 
 # ----------------------------------------------------------------------
-# 페이지 함수: 회원가입 및 설문 (비밀번호 확인 텍스트 수정)
+# 페이지 함수: 회원가입 및 설문
 # ----------------------------------------------------------------------
 if st.session_state.page == 'signup_and_survey':
     st.title("✨ 멘토 회원가입 및 설문")
@@ -444,7 +515,6 @@ if st.session_state.page == 'signup_and_survey':
         name_input = st.text_input("이름", key='signup_name_val')
         email_input = st.text_input("이메일 (로그인 ID)", key='signup_email_val')
         password_input = st.text_input("비밀번호", type="password", key='signup_password_val')
-        # 🌟 비밀번호 확인 입력창의 라벨을 "비밀번호 확인"으로 명시
         confirm_password_input = st.text_input("비밀번호 확인", type="password", key='signup_confirm_password_val')
         
         submitted = st.form_submit_button("회원가입하고 설문하기")
