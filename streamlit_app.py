@@ -638,4 +638,53 @@ if st.session_state.page == 'signup_and_survey':
                 
                 mentor_id = str(uuid.uuid4())[:8] 
                 
-                #
+                # 멘토 데이터 수집 및 저장
+                mentor_profile = {
+                    'ID': mentor_id, 
+                    '이름': st.session_state.get('temp_name', '이름 없음'),
+                    '이메일': st.session_state.get('temp_email', '이메일 없음'),
+                    '가입일': datetime.date.today().strftime("%Y-%m-%d"),
+                    '매칭 상태': '매칭 대기',
+                    
+                    '성별': gender,
+                    '나이대': age_group,
+                    '현재 직종': occupation,
+                    '멘토링 목적': ", ".join(purpose),
+                    '주요 주제': ", ".join(topic),
+                    '만남 방식': communication_method,
+                    '가능 요일': ", ".join(communication_day),
+                    '가능 시간': ", ".join(communication_time),
+                    '소통 스타일': communication_style,
+                    '취미': ", ".join(hobby),
+                    '학문': ", ".join(academic),
+                    '라이프스타일': ", ".join(lifestyle),
+                    '대중문화': ", ".join(pop_culture),
+                    '경험 선호': new_vs_stable,
+                    '선호 성향': ", ".join(preference)
+                }
+                
+                st.session_state.mentor_data.append(mentor_profile)
+                st.session_state.current_mentor_id = mentor_id 
+                
+                # 상태 초기화
+                st.session_state.survey_done = False
+                if 'temp_name' in st.session_state:
+                    del st.session_state['temp_name']
+                if 'temp_email' in st.session_state:
+                    del st.session_state['temp_email']
+                
+                st.balloons()
+                st.success(f"🎉 멘토 프로필 설문이 완료되었습니다! (멘토 ID: {mentor_id}) 이제 멘티를 찾을 수 있습니다.")
+                set_page('find_matches')
+        
+        st.markdown("---")
+        st.info("✅ 모든 설문 항목을 작성하고 **'설문 완료하고 매칭 시작하기'** 버튼을 눌러주세요.")
+
+elif st.session_state.page == 'find_matches':
+    find_matches()
+
+elif st.session_state.page == 'my_matches':
+    my_matches()
+
+elif st.session_state.page == 'admin_dashboard':
+    admin_dashboard()
