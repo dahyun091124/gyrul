@@ -77,8 +77,6 @@ def calculate_match_score(mentor_profile, mentee_profile):
     
     # 멘토의 문자열 목록 (쉼표로 구분됨)을 리스트로 변환
     mentor_topics = set(mentor_profile.get('주요 주제', '').split(', '))
-    # mentor_styles = mentor_profile.get('소통 스타일', '') # 현재 미사용
-    # mentor_methods = mentor_profile.get('만남 방식', '') # 현재 미사용
 
     # 멘티의 문자열 목록을 리스트로 변환
     mentee_goals = set(mentee_profile.get('목표', '').split(', '))
@@ -107,30 +105,37 @@ def calculate_match_score(mentor_profile, mentee_profile):
     return score
 
 # ----------------------------------------------------------------------
-# CSS 스타일링 (폰트 크기 및 색상 설정)
+# CSS 스타일링 (폰트 크기 대폭 수정)
 # ----------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* 폰트 크기 수정 START */
+    /* 폰트 크기 수정 START: 1.6rem -> 1.8rem로 대폭 확대 */
     
-    /* 일반 텍스트, 라벨 폰트 크기 확대: 1.6rem */
+    /* 일반 텍스트 (st.write, st.info 등), 라벨(st.text_input, st.selectbox 등) */
     .st-emotion-cache-183060u, 
     .st-emotion-cache-1cyp687, 
     .st-emotion-cache-16sx4w0, 
     .st-emotion-cache-11r9c4z, 
     .st-emotion-cache-19k721u {
-        font-size: 1.6rem !important; /* 일반 텍스트 크기 증가 */
+        font-size: 1.8rem !important; /* 일반 텍스트 크기 대폭 증가 */
         color: #e0e0e0 !important;
     }
     
-    /* 라디오 버튼, 체크박스 폰트 크기 확대: 1.5rem */
+    /* 라디오 버튼, 체크박스 폰트 크기 확대: 1.5rem -> 1.7rem */
     label.st-emotion-cache-p2w958 {
-        font-size: 1.5rem !important;
+        font-size: 1.7rem !important;
     }
     
-    /* 정보 표시 영역 (info, success 등) 텍스트 크기 확대: 1.5rem */
+    /* 정보 표시 영역 (info, success 등) 텍스트 크기 확대: 1.5rem -> 1.7rem */
     .stAlert {
-        font-size: 1.5rem !important;
+        font-size: 1.7rem !important;
+    }
+    
+    /* 입력 필드 내부 텍스트 크기 (input, textarea) 확대 */
+    .st-emotion-cache-9ez29k > div > input, 
+    .st-emotion-cache-9ez29k > div > textarea,
+    .st-emotion-cache-9ez29k > div > div {
+        font-size: 1.8rem !important;
     }
     
     /* 폰트 크기 수정 END */
@@ -138,18 +143,18 @@ st.markdown("""
     
     /* 제목 */
     h1, h2, h3 {
-        font-size: 2.5rem !important;
+        font-size: 2.8rem !important; /* H1, H2는 2.8rem로 더 크게 */
         color: #f7a300 !important;
         font-weight: bold;
     }
     h3 {
-        font-size: 2rem !important;
+        font-size: 2.2rem !important; /* H3는 2.2rem */
     }
     
     /* 버튼 */
     .st-emotion-cache-19k721u, .st-emotion-cache-11r9c4z {
-        font-size: 1.5rem !important;
-        padding: 0.75rem 1.5rem;
+        font-size: 1.6rem !important; /* 버튼 텍스트도 1.6rem로 키움 */
+        padding: 0.8rem 1.6rem;
     }
     
     /* 사이드바, 입력창, 버튼 배경색 */
@@ -170,11 +175,12 @@ st.markdown("""
         font-weight: bold;
         margin-bottom: 5px;
         display: block;
+        font-size: 1.5rem; /* 상세정보 라벨도 1.5rem로 조정 */
     }
     .detail-value {
         color: #ffffff;
         margin-left: 15px;
-        font-size: 1.1rem;
+        font-size: 1.5rem; /* 상세정보 값도 1.5rem로 조정 */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -417,7 +423,6 @@ def admin_dashboard():
                 st.error("❌ 비밀번호가 올바르지 않습니다.")
         
         st.markdown("---")
-        # 💡 테스트 비밀번호 안내 문구를 제거했습니다.
         return
 
     # --- 인증 성공 후 대시보드 내용 ---
@@ -633,53 +638,4 @@ if st.session_state.page == 'signup_and_survey':
                 
                 mentor_id = str(uuid.uuid4())[:8] 
                 
-                # 멘토 데이터 수집 및 저장
-                mentor_profile = {
-                    'ID': mentor_id, 
-                    '이름': st.session_state.get('temp_name', '이름 없음'),
-                    '이메일': st.session_state.get('temp_email', '이메일 없음'),
-                    '가입일': datetime.date.today().strftime("%Y-%m-%d"),
-                    '매칭 상태': '매칭 대기',
-                    
-                    '성별': gender,
-                    '나이대': age_group,
-                    '현재 직종': occupation,
-                    '멘토링 목적': ", ".join(purpose),
-                    '주요 주제': ", ".join(topic),
-                    '만남 방식': communication_method,
-                    '가능 요일': ", ".join(communication_day),
-                    '가능 시간': ", ".join(communication_time),
-                    '소통 스타일': communication_style,
-                    '취미': ", ".join(hobby),
-                    '학문': ", ".join(academic),
-                    '라이프스타일': ", ".join(lifestyle),
-                    '대중문화': ", ".join(pop_culture),
-                    '경험 선호': new_vs_stable,
-                    '선호 성향': ", ".join(preference)
-                }
-                
-                st.session_state.mentor_data.append(mentor_profile)
-                st.session_state.current_mentor_id = mentor_id 
-                
-                # 상태 초기화
-                st.session_state.survey_done = False
-                if 'temp_name' in st.session_state:
-                    del st.session_state['temp_name']
-                if 'temp_email' in st.session_state:
-                    del st.session_state['temp_email']
-                
-                st.balloons()
-                st.success(f"🎉 멘토 프로필 설문이 완료되었습니다! (멘토 ID: {mentor_id}) 이제 멘티를 찾을 수 있습니다.")
-                set_page('find_matches')
-        
-        st.markdown("---")
-        st.info("✅ 모든 설문 항목을 작성하고 **'설문 완료하고 매칭 시작하기'** 버튼을 눌러주세요.")
-
-elif st.session_state.page == 'find_matches':
-    find_matches()
-
-elif st.session_state.page == 'my_matches':
-    my_matches()
-
-elif st.session_state.page == 'admin_dashboard':
-    admin_dashboard()
+                #
