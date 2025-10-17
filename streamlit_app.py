@@ -105,37 +105,54 @@ def calculate_match_score(mentor_profile, mentee_profile):
     return score
 
 # ----------------------------------------------------------------------
-# CSS 스타일링 (폰트 크기 대폭 수정)
+# CSS 스타일링 (폰트 크기 대폭 확대 - 최후의 수단!)
 # ----------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* 폰트 크기 수정 START: 1.6rem -> 1.8rem로 대폭 확대 */
+    /* 폰트 크기 수정 START: 모든 일반 텍스트를 2.5rem로 강제 확대 */
     
-    /* 일반 텍스트 (st.write, st.info 등), 라벨(st.text_input, st.selectbox 등) */
-    .st-emotion-cache-183060u, 
-    .st-emotion-cache-1cyp687, 
-    .st-emotion-cache-16sx4w0, 
-    .st-emotion-cache-11r9c4z, 
-    .st-emotion-cache-19k721u {
-        font-size: 1.8rem !important; /* 일반 텍스트 크기 대폭 증가 */
+    /* 1. 가장 일반적인 텍스트 (st.write, st.markdown 본문, 라벨 등) */
+    .st-emotion-cache-183060u, /* st.markdown, st.write의 일반 텍스트 (가장 흔함) */
+    .st-emotion-cache-1cyp687, /* 일반적인 div 컨테이너 텍스트 */
+    .st-emotion-cache-16sx4w0, /* 라벨 텍스트 (input, selectbox 위) */
+    .st-emotion-cache-11r9c4z, /* 버튼, 입력 필드 등 내부 텍스트 */
+    .st-emotion-cache-19k721u, /* 기타 일반 텍스트 */
+    div[data-testid="stText"],
+    div[data-testid="stMarkdownContainer"],
+    div[data-testid="stBlock"] p,
+    .stMarkdown,
+    body {
+        font-size: 2.5rem !important; /* 2.5rem (약 25pt)로 대폭 확대 */
         color: #e0e0e0 !important;
     }
     
-    /* 라디오 버튼, 체크박스 폰트 크기 확대: 1.5rem -> 1.7rem */
-    label.st-emotion-cache-p2w958 {
-        font-size: 1.7rem !important;
-    }
-    
-    /* 정보 표시 영역 (info, success 등) 텍스트 크기 확대: 1.5rem -> 1.7rem */
+    /* 2. Alert, Info, Warning 메시지 박스 텍스트 크기 확대 */
     .stAlert {
-        font-size: 1.7rem !important;
+        font-size: 2.2rem !important; /* 안내 문구도 2.2rem로 확대 */
     }
     
-    /* 입력 필드 내부 텍스트 크기 (input, textarea) 확대 */
+    /* 3. 입력 필드 내부 텍스트 크기 확대 (실제 사용자가 입력하는 글씨) */
     .st-emotion-cache-9ez29k > div > input, 
     .st-emotion-cache-9ez29k > div > textarea,
-    .st-emotion-cache-9ez29k > div > div {
-        font-size: 1.8rem !important;
+    .st-emotion-cache-9ez29k > div > div,
+    input[data-testid="stTextInput"],
+    textarea[data-testid="stTextInput"],
+    div[data-testid="stSelectbox"] div[role="button"],
+    div[data-testid="stMultiSelect"] div[role="button"] {
+        font-size: 2.5rem !important;
+    }
+    
+    /* 4. 라디오 버튼, 체크박스 라벨 텍스트 크기 확대 (가장 중요한 설문 항목) */
+    label.st-emotion-cache-p2w958, 
+    label.st-emotion-cache-16sx4w0,
+    div[data-testid="stForm"] label {
+        font-size: 2.5rem !important;
+    }
+
+    /* 5. 버튼 텍스트 크기 확대 */
+    .stButton > button {
+        font-size: 2.0rem !important; /* 버튼 텍스트는 2.0rem */
+        padding: 1.0rem 2.0rem !important; /* 버튼 크기도 키움 */
     }
     
     /* 폰트 크기 수정 END */
@@ -143,18 +160,12 @@ st.markdown("""
     
     /* 제목 */
     h1, h2, h3 {
-        font-size: 2.8rem !important; /* H1, H2는 2.8rem로 더 크게 */
+        font-size: 3.5rem !important; /* H1, H2는 3.5rem로 초대형 */
         color: #f7a300 !important;
         font-weight: bold;
     }
     h3 {
-        font-size: 2.2rem !important; /* H3는 2.2rem */
-    }
-    
-    /* 버튼 */
-    .st-emotion-cache-19k721u, .st-emotion-cache-11r9c4z {
-        font-size: 1.6rem !important; /* 버튼 텍스트도 1.6rem로 키움 */
-        padding: 0.8rem 1.6rem;
+        font-size: 3.0rem !important; /* H3는 3.0rem */
     }
     
     /* 사이드바, 입력창, 버튼 배경색 */
@@ -162,25 +173,25 @@ st.markdown("""
         background-color: #1e1e1e !important;
     }
     
-    /* 상세 프로필 박스 스타일 */
+    /* 상세 프로필 박스 스타일 (일반 텍스트와 통일) */
     .detail-box {
         background-color: #282c34;
-        padding: 15px;
+        padding: 20px;
         border-radius: 8px;
-        border: 1px solid #f7a300;
-        margin-bottom: 20px;
+        border: 2px solid #f7a300;
+        margin-bottom: 25px;
     }
     .detail-label {
         color: #e0e0e0;
         font-weight: bold;
         margin-bottom: 5px;
         display: block;
-        font-size: 1.5rem; /* 상세정보 라벨도 1.5rem로 조정 */
+        font-size: 2.2rem !important; /* 상세정보 라벨도 2.2rem로 조정 */
     }
     .detail-value {
         color: #ffffff;
         margin-left: 15px;
-        font-size: 1.5rem; /* 상세정보 값도 1.5rem로 조정 */
+        font-size: 2.2rem !important; /* 상세정보 값도 2.2rem로 조정 */
     }
 </style>
 """, unsafe_allow_html=True)
