@@ -105,30 +105,31 @@ def calculate_match_score(mentor_profile, mentee_profile):
     return score
 
 # ----------------------------------------------------------------------
-# CSS 스타일링 (폰트 크기 대폭 확대 - 최후의 수단!)
+# CSS 스타일링 (글씨 크기만 집중적으로 대폭 확대!)
 # ----------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* 폰트 크기 수정 START: 모든 일반 텍스트를 2.5rem로 강제 확대 */
+    /* 폰트 크기 수정 START: 폰트 사이즈만 2.5rem로 강제 확대, 레이아웃 속성 최소화 */
     
-    /* 1. 가장 일반적인 텍스트 (st.write, st.markdown 본문, 라벨 등) */
+    /* 1. 가장 일반적인 텍스트 (st.write, st.markdown 본문, 라벨, 상세 정보 값 등) */
     .st-emotion-cache-183060u, /* st.markdown, st.write의 일반 텍스트 (가장 흔함) */
     .st-emotion-cache-1cyp687, /* 일반적인 div 컨테이너 텍스트 */
     .st-emotion-cache-16sx4w0, /* 라벨 텍스트 (input, selectbox 위) */
     .st-emotion-cache-11r9c4z, /* 버튼, 입력 필드 등 내부 텍스트 */
     .st-emotion-cache-19k721u, /* 기타 일반 텍스트 */
     div[data-testid="stText"],
-    div[data-testid="stMarkdownContainer"],
-    div[data-testid="stBlock"] p,
+    div[data-testid="stMarkdownContainer"] p,
+    .stMarkdown p,
     .stMarkdown,
     body {
         font-size: 2.5rem !important; /* 2.5rem (약 25pt)로 대폭 확대 */
         color: #e0e0e0 !important;
+        /* Padding, Margin 등 레이아웃 속성은 건드리지 않습니다! */
     }
     
     /* 2. Alert, Info, Warning 메시지 박스 텍스트 크기 확대 */
     .stAlert {
-        font-size: 2.2rem !important; /* 안내 문구도 2.2rem로 확대 */
+        font-size: 2.2rem !important; 
     }
     
     /* 3. 입력 필드 내부 텍스트 크기 확대 (실제 사용자가 입력하는 글씨) */
@@ -142,30 +143,38 @@ st.markdown("""
         font-size: 2.5rem !important;
     }
     
-    /* 4. 라디오 버튼, 체크박스 라벨 텍스트 크기 확대 (가장 중요한 설문 항목) */
+    /* 4. 라디오 버튼, 체크박스 라벨 텍스트 크기 확대 (설문 항목) */
     label.st-emotion-cache-p2w958, 
     label.st-emotion-cache-16sx4w0,
-    div[data-testid="stForm"] label {
+    div[data-testid="stForm"] label,
+    div[data-testid="stForm"] p {
         font-size: 2.5rem !important;
     }
 
-    /* 5. 버튼 텍스트 크기 확대 */
+    /* 5. 버튼 텍스트 크기 확대 (버튼 자체 크기는 Streamlit 기본값 유지) */
     .stButton > button {
-        font-size: 2.0rem !important; /* 버튼 텍스트는 2.0rem */
-        padding: 1.0rem 2.0rem !important; /* 버튼 크기도 키움 */
+        font-size: 2.0rem !important; 
+        /* 버튼 Padding은 최소한만 조정하거나 유지하여 버튼만 너무 커지지 않도록 합니다. */
+        padding: 0.8rem 1.6rem !important; 
     }
     
     /* 폰트 크기 수정 END */
     
     
-    /* 제목 */
-    h1, h2, h3 {
-        font-size: 3.5rem !important; /* H1, H2는 3.5rem로 초대형 */
+    /* 제목 크기 */
+    h1 {
+        font-size: 3.5rem !important; 
+        color: #f7a300 !important;
+        font-weight: bold;
+    }
+    h2 {
+        font-size: 3.0rem !important; 
         color: #f7a300 !important;
         font-weight: bold;
     }
     h3 {
-        font-size: 3.0rem !important; /* H3는 3.0rem */
+        font-size: 2.8rem !important; 
+        color: #f7a300 !important;
     }
     
     /* 사이드바, 입력창, 버튼 배경색 */
@@ -173,25 +182,25 @@ st.markdown("""
         background-color: #1e1e1e !important;
     }
     
-    /* 상세 프로필 박스 스타일 (일반 텍스트와 통일) */
+    /* 상세 프로필 박스 스타일 */
     .detail-box {
         background-color: #282c34;
-        padding: 20px;
+        padding: 15px; /* 박스 크기는 과도하게 키우지 않음 */
         border-radius: 8px;
-        border: 2px solid #f7a300;
-        margin-bottom: 25px;
+        border: 1px solid #f7a300;
+        margin-bottom: 20px;
     }
     .detail-label {
         color: #e0e0e0;
         font-weight: bold;
         margin-bottom: 5px;
         display: block;
-        font-size: 2.2rem !important; /* 상세정보 라벨도 2.2rem로 조정 */
+        font-size: 2.2rem !important; /* 글씨만 크게 */
     }
     .detail-value {
         color: #ffffff;
         margin-left: 15px;
-        font-size: 2.2rem !important; /* 상세정보 값도 2.2rem로 조정 */
+        font-size: 2.2rem !important; /* 글씨만 크게 */
     }
 </style>
 """, unsafe_allow_html=True)
@@ -579,123 +588,4 @@ if st.session_state.page == 'signup_and_survey':
             st.subheader("● 멘토링 목적 및 주제")
             purpose = st.multiselect(
                 "멘토링을 통해 어떤 도움을 주고 싶으신가요? (복수선택 가능)",
-                ["진로/커리어 조언", "학업/전문지식 조언", "사회/인생 경험 공유", "정서적 지지 및 대화"],
-                key='survey_purpose'
-            )
-            topic = st.multiselect(
-                "멘토링에서 주로 어떤 주제에 대해 이야기하고 싶으신가요?",
-                ["진로·직업", "학업·전문 지식", "인생 경험·삶의 가치관", "대중문화·취미", "사회 문제·시사", "건강·웰빙"],
-                key='survey_topic'
-            )
-            
-            st.subheader("● 선호하는 소통 방법")
-            communication_method = st.radio("만남 방식", ["대면 만남", "화상 채팅", "일반 채팅"], horizontal=True, key='survey_comm_method')
-            communication_day = st.multiselect("소통 가능한 요일 (복수선택)", ["월", "화", "수", "목", "금", "토", "일"], key='survey_comm_day')
-            communication_time = st.multiselect("소통 가능한 시간대 (복수선택)", ["오전", "오후", "저녁", "밤"], key='survey_comm_time')
-            
-            st.subheader("● 소통 스타일")
-            communication_style = st.selectbox(
-                "평소 대화 시 본인과 비슷하다고 생각되는 것을 선택해주세요.",
-                [
-                    "연두부형: 조용하고 차분하게, 상대방 얘기를 경청하며 공감해 주는 편이에요.", 
-                    "분위기메이커형: 활발하고 에너지가 넘쳐 대화를 이끌어가는 편이에요.",
-                    "효율추구형: 주제를 체계적으로 정리하고 목표 지향적으로 대화하는 편이에요.",
-                    "댐댐이형: 자유롭고 편안하게, 즉흥적으로 대화를 이어가는 편이에요.",
-                    "감성 충만형: 감성적인 대화를 좋아하고 위로와 지지를 주는 편이에요.",
-                    "냉철한 조언자형: 논리적이고 문제 해결 중심으로 조언을 주고받는 편이에요."
-                ],
-                key='survey_comm_style'
-            )
-
-            st.subheader("● 관심사, 취향")
-            hobby = st.multiselect(
-                "1) 여가/취미 관련",
-                ["독서", "음악 감상", "영화/드라마 감상", "게임 (PC/콘솔/모바일)", "운동/스포츠 관람", "미술·전시 감상", "여행", "요리/베이킹", "사진/영상 제작", "춤/노래"],
-                key='survey_hobby'
-            )
-            academic = st.multiselect(
-                "2) 학문/지적 관심사",
-                ["인문학 (철학, 역사, 문학 등)", "사회과학 (정치, 경제, 사회, 심리 등)", "자연과학 (물리, 화학, 생명과학 등)", "수학/논리 퍼즐", "IT/테크놀로지 (AI, 코딩, 로봇 등)", "환경/지속가능성"],
-                key='survey_academic'
-            )
-            lifestyle = st.multiselect(
-                "3) 라이프스타일",
-                ["패션/뷰티", "건강/웰빙", "자기계발", "사회참여/봉사활동", "재테크/투자", "반려동물"],
-                key='survey_lifestyle'
-            )
-            pop_culture = st.multiselect(
-                "4) 대중문화",
-                ["K-POP", "아이돌/연예인", "유튜브/스트리밍", "웹툰/웹소설", "스포츠 스타"],
-                key='survey_pop_culture'
-            )
-
-            st.subheader("● 5) 특별한 취향/성향")
-            
-            new_vs_stable = st.radio(
-                "새로운 경험과 안정감 중 어느 것을 더 선호하시나요?",
-                ["새로운 경험을 추구합니다", "안정적이고 익숙한 것을 선호합니다"],
-                horizontal=True, 
-                key='survey_new_vs_stable'
-            )
-            
-            preference = st.multiselect(
-                "본인에게 해당하는 성향을 모두 선택해주세요.",
-                ["혼자 보내는 시간 선호", "친구들과 어울리기 선호", "실내 활동 선호", "야외 활동 선호"],
-                key='survey_preference'
-            )
-
-            survey_submitted = st.form_submit_button("설문 완료하고 매칭 시작하기")
-            if survey_submitted:
-                
-                mentor_id = str(uuid.uuid4())[:8] 
-                
-                # 멘토 데이터 수집 및 저장
-                mentor_profile = {
-                    'ID': mentor_id, 
-                    '이름': st.session_state.get('temp_name', '이름 없음'),
-                    '이메일': st.session_state.get('temp_email', '이메일 없음'),
-                    '가입일': datetime.date.today().strftime("%Y-%m-%d"),
-                    '매칭 상태': '매칭 대기',
-                    
-                    '성별': gender,
-                    '나이대': age_group,
-                    '현재 직종': occupation,
-                    '멘토링 목적': ", ".join(purpose),
-                    '주요 주제': ", ".join(topic),
-                    '만남 방식': communication_method,
-                    '가능 요일': ", ".join(communication_day),
-                    '가능 시간': ", ".join(communication_time),
-                    '소통 스타일': communication_style,
-                    '취미': ", ".join(hobby),
-                    '학문': ", ".join(academic),
-                    '라이프스타일': ", ".join(lifestyle),
-                    '대중문화': ", ".join(pop_culture),
-                    '경험 선호': new_vs_stable,
-                    '선호 성향': ", ".join(preference)
-                }
-                
-                st.session_state.mentor_data.append(mentor_profile)
-                st.session_state.current_mentor_id = mentor_id 
-                
-                # 상태 초기화
-                st.session_state.survey_done = False
-                if 'temp_name' in st.session_state:
-                    del st.session_state['temp_name']
-                if 'temp_email' in st.session_state:
-                    del st.session_state['temp_email']
-                
-                st.balloons()
-                st.success(f"🎉 멘토 프로필 설문이 완료되었습니다! (멘토 ID: {mentor_id}) 이제 멘티를 찾을 수 있습니다.")
-                set_page('find_matches')
-        
-        st.markdown("---")
-        st.info("✅ 모든 설문 항목을 작성하고 **'설문 완료하고 매칭 시작하기'** 버튼을 눌러주세요.")
-
-elif st.session_state.page == 'find_matches':
-    find_matches()
-
-elif st.session_state.page == 'my_matches':
-    my_matches()
-
-elif st.session_state.page == 'admin_dashboard':
-    admin_dashboard()
+                ["진로/커리어 조언", "학업/전문지식 조언", "사회/인생 경험 공유", "정서적 지
